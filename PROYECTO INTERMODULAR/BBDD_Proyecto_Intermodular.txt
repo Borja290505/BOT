@@ -1,0 +1,88 @@
+-- Borja Ros Pérez
+-- 1DAM
+
+DROP DATABASE IF EXISTS RosPowerMotor;
+CREATE DATABASE RosPowerMotor;
+USE RosPowerMotor;
+
+CREATE TABLE Cliente (
+    idCliente INT AUTO_INCREMENT,
+    dni VARCHAR(9) NOT NULL,
+    nombre VARCHAR(50) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    direccion VARCHAR(150),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    fechaAlta DATE,
+    CONSTRAINT pk_cliente PRIMARY KEY (idCliente),
+    CONSTRAINT uq_cliente_dni UNIQUE (dni)
+);
+
+CREATE TABLE Vehiculo (
+    matricula VARCHAR(10) NOT NULL,
+    bastidor VARCHAR(30) UNIQUE,
+    marca VARCHAR(50),
+    modelo VARCHAR(50),
+    anio INT,
+    kmsActuales INT,
+    combustible VARCHAR(20),
+    color VARCHAR(30),
+    idCliente INT NOT NULL,
+    CONSTRAINT pk_vehiculo PRIMARY KEY (matricula),
+    CONSTRAINT fk_vehiculo_cliente 
+        FOREIGN KEY (idCliente) REFERENCES Cliente(idCliente)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE OrdenReparacion (
+    idOrden INT AUTO_INCREMENT,
+    fechaApertura DATE NOT NULL,
+    fechaCierre DATE,
+    fechaEstimadaCierre DATE,
+    kmEntrada INT,
+    estado VARCHAR(30),
+    observaciones TEXT,
+    manoObra DECIMAL(8,2),
+    matricula VARCHAR(10) NOT NULL,
+    CONSTRAINT pk_orden PRIMARY KEY (idOrden),
+    CONSTRAINT fk_orden_vehiculo
+        FOREIGN KEY (matricula) REFERENCES Vehiculo(matricula)
+        ON DELETE CASCADE
+);
+
+
+CREATE TABLE Repuesto (
+    idRepuesto INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    marca VARCHAR(50),
+    precioUnitario DECIMAL(10,2),
+    stock INT,
+    CONSTRAINT pk_repuesto PRIMARY KEY (idRepuesto)
+);
+
+-- Creamos la tabla OrdenReparacion_Repuesto
+CREATE TABLE OrdenReparacion_Repuesto (
+    idOrden INT NOT NULL,
+    idRepuesto INT NOT NULL,
+    cantidad INT NOT NULL,
+    CONSTRAINT pk_orden_repuesto PRIMARY KEY (idOrden, idRepuesto),
+    CONSTRAINT fk_or_orden 
+        FOREIGN KEY (idOrden) REFERENCES OrdenReparacion (idOrden)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_or_repuesto 
+        FOREIGN KEY (idRepuesto) REFERENCES Repuesto (idRepuesto)
+);
+
+
+CREATE TABLE Factura (
+    idFactura INT AUTO_INCREMENT,
+    fechaFactura DATE NOT NULL,
+    subtotal DECIMAL(10,2),
+    iva DECIMAL(5,2),
+    total DECIMAL(10,2),
+    idOrden INT UNIQUE,
+    CONSTRAINT pk_factura PRIMARY KEY (idFactura),
+    CONSTRAINT fk_factura_orden
+        FOREIGN KEY (idOrden) REFERENCES OrdenReparacion(idOrden)
+        ON DELETE CASCADE
+);
