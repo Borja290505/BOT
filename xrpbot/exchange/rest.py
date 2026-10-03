@@ -17,6 +17,7 @@ se han podido verificar desde el entorno de desarrollo están marcados con
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import random
 import time
@@ -93,7 +94,8 @@ class KrakenFuturesRest:
 
     async def open(self) -> None:
         if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(timeout=self._timeout)
+            self._session = aiohttp.ClientSession(timeout=self._timeout,
+                                                  headers={"User-Agent": "xrpbot/0.1 (python-aiohttp)"})
 
     async def close(self) -> None:
         if self._session and not self._session.closed:
@@ -146,7 +148,15 @@ class KrakenFuturesRest:
                 async with req as resp:
                     if resp.status >= 500 or resp.status == 429:
                         raise KrakenAPIError(endpoint, f"HTTP {resp.status}")
-                    payload = await resp.json(content_type=None)
+                    text = await resp.text()
+                    status = resp.status
+                try:
+                    payload = json.loads(text)
+                except ValueError:
+                    raise KrakenAPIError(endpoint, f"respuesta no JSON (HTTP {status}) de {url}: "
+                                                   f"{text[:300]!r}") from None
+                if not isinstance(payload, dict):
+                    raise KrakenAPIError(endpoint, f"respuesta inesperada (HTTP {status}): {text[:300]!r}")
                 self._update_clock(payload)
                 if payload.get("result") == "error":
                     raise KrakenAPIError(endpoint, str(payload.get("error", "unknown")), payload)
