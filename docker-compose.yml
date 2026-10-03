@@ -1,0 +1,28 @@
+# Por defecto arranca en DEMO. Uso:
+#   docker compose up -d bot-demo            # bot en demo, se reinicia solo
+#   docker compose run --rm cli status --mode demo
+#   docker compose run --rm cli kill --mode demo        # KILL SWITCH
+#   docker compose run --rm cli backtest
+services:
+  bot-demo:
+    build: .
+    command: ["run", "--mode", "demo"]
+    env_file: .env
+    restart: unless-stopped
+    volumes: [./state:/app/state, ./data:/app/data, ./logs:/app/logs, ./config:/app/config:ro]
+    logging: {driver: json-file, options: {max-size: "20m", max-file: "5"}}
+
+  # Modo real: descomenta SOLO tras superar el plan de pruebas.
+  # Requiere XRPBOT_LIVE_CONFIRM="OPERAR EN REAL PF_XRPUSD" en .env (confirmación explícita).
+  # bot-live:
+  #   build: .
+  #   command: ["run", "--mode", "live", "--live"]
+  #   env_file: .env
+  #   restart: unless-stopped
+  #   volumes: [./state:/app/state, ./data:/app/data, ./logs:/app/logs, ./config:/app/config:ro]
+
+  cli:
+    build: .
+    profiles: ["tools"]
+    env_file: .env
+    volumes: [./state:/app/state, ./data:/app/data, ./logs:/app/logs, ./reports:/app/reports, ./config:/app/config:ro]

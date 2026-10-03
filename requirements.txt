@@ -1,0 +1,12 @@
+# Runtime
+aiohttp>=3.9,<4
+websockets>=12,<18
+numpy>=1.26
+pandas>=2.1
+pyarrow>=15
+python-dotenv>=1.0
+PyYAML>=6.0
+
+# Tests
+pytest>=8
+pytest-asyncio>=0.23

@@ -1,0 +1,94 @@
+# Configuración del bot. Los secretos van en .env, nunca aquí.
+#
+# Modos:
+#   backtest -> solo datos locales, sin conexión
+#   demo     -> Kraken Futures demo (demo-futures.kraken.com) con claves de demo   [POR DEFECTO]
+#   sim      -> simulador interno con datos públicos en vivo de producción, sin claves
+#   live     -> dinero real; exige --live y una confirmación escrita al arrancar
+mode: demo
+
+symbol: PF_XRPUSD
+timeframe: 1h          # la estrategia está diseñada y validada para 1h
+
+capital:
+  # Capital máximo que el bot considera suyo. El riesgo se calcula sobre
+  # min(equity real de la cuenta, max_capital_usd). null = usa la equity real.
+  max_capital_usd: null
+  # Capital inicial para backtest y para el modo sim.
+  backtest_initial_usd: 10000
+
+risk:
+  risk_per_trade: 0.01            # 1 % del capital por operación
+  max_daily_loss: 0.03            # 3 %: se detiene y exige rearme manual
+  max_leverage: 2.0               # apalancamiento EFECTIVO máximo (nocional / capital)
+  max_open_positions: 1
+  # El precio de liquidación estimado debe quedar al menos N veces más lejos
+  # de la entrada que el stop.
+  min_liq_distance_multiple: 3.0
+  margin_mode: isolated           # isolated | cross (si isolated no se puede fijar, se avisa y sigue con cross)
+  # Si al reconciliar aparece una posición que el bot no conoce, ¿le pone un stop
+  # de emergencia? (el bot se congela igualmente y avisa)
+  protect_unknown_positions: true
+  emergency_stop_atr_mult: 3.0
+
+strategy:
+  name: donchian_atr
+  entry_lookback: 20              # ruptura del máximo/mínimo de N velas cerradas
+  exit_lookback: 10               # stop dinámico por canal de salida
+  atr_period: 14
+  atr_stop_mult: 2.0              # stop inicial = precio de señal -/+ k * ATR
+  take_profit_r: 4.0              # TP lejano en múltiplos de R (el trailing hace el resto)
+  funding_filter:
+    enabled: false                # se prueba con y sin él en el walk-forward
+    # Umbral sobre el funding relativo HORARIO. 0.0001 = 0,01 %/h ~ 87,6 % anual.
+    max_abs_hourly_rate: 0.0001
+
+execution:
+  # Entrada: limitada IOC con tope de deslizamiento respecto al mid (no market puro).
+  entry_max_slippage_bps: 25
+  stop_trigger_signal: mark       # mark | last (ver README: por qué mark)
+  take_profit_post_only: true     # TP como orden post-only reduce-only (comisión maker)
+  candle_close_delay_s: 20        # espera tras el cierre de la vela antes de pedirla
+  poll_interval_s: 5              # sondeo REST de órdenes/posiciones (fuente de verdad)
+  reconcile_interval_s: 60
+
+circuit_breaker:
+  max_spread_bps: 15
+  max_data_age_s: 30              # ticker más viejo que esto = datos desfasados
+  max_candle_delay_bars: 2
+  max_atr_ratio: 3.0              # ATR actual / mediana de ATR de 30 días
+  max_mark_last_divergence_bps: 50
+  min_book_depth_multiple: 3.0    # profundidad a +-0,5 % >= N veces nuestro tamaño
+
+backtest:
+  data_dir: data
+  slippage_bps: 5                 # deslizamiento adverso por ejecución taker
+  # Comisiones de respaldo si no se pueden leer del endpoint (fracción, 0.0005 = 0,05 %)
+  fallback_taker_fee: 0.0005
+  fallback_maker_fee: 0.0002
+  stop_trigger_source: mark       # mark | trade (velas usadas para disparar el stop)
+  # Especificación del contrato para backtest offline. En demo/live se lee SIEMPRE
+  # del endpoint /instruments; estos valores solo se usan si no hay conexión.
+  offline_spec:
+    contract_size: 1.0
+    tick_size: 0.0001
+    size_step: 1.0
+    min_size: 1.0
+    maintenance_margin: 0.01      # PROVISIONAL: verificar con /instruments
+
+walkforward:
+  train_months: 12
+  test_months: 3
+  holdout_months: 6               # último tramo intocable, se evalúa una sola vez
+  min_train_trades: 20
+  grid:
+    entry_lookback: [20, 40, 55]
+    exit_lookback: [10, 20]
+    atr_stop_mult: [2.0, 3.0]
+
+storage:
+  db_path: state/xrpbot-{mode}.sqlite   # una base de datos por modo: demo, sim y live nunca se mezclan
+  log_dir: logs
+
+alerts:
+  telegram_enabled: false
