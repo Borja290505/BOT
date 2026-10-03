@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip, controlbar with context %}
+{% block content %}
+<h1>Riesgo</h1>
+<div id="risk-blocked"></div>
+<div class="grid grid-2">
+  <section class="card meter" id="meter-daily">
+    <div class="card-head"><h2>Pérdida diaria consumida</h2>{{ tip('daily_loss') }}<span class="spacer"></span><span id="daily-badge"></span></div>
+    <div class="meter-track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-label="Pérdida diaria respecto al límite"><div class="meter-fill"></div><div class="meter-mark" style="left:calc(100% - 2px)"></div></div>
+    <div class="meter-legend num"><span class="l"></span><span class="r"></span></div>
+    <p class="small text-2" id="daily-reset"></p>
+    <p class="small muted">Al llegar al 100 %: el bot cierra todo y se DETIENE hasta un rearme manual.</p>
+  </section>
+  <section class="card meter" id="meter-lev">
+    <div class="card-head"><h2>Apalancamiento efectivo</h2>{{ tip('effective_leverage') }}</div>
+    <div class="meter-track" role="meter" aria-label="Apalancamiento efectivo frente al límite del bot"><div class="meter-fill"></div><div class="meter-mark" style="left:calc(100% - 2px)"></div></div>
+    <div class="meter-legend num"><span class="l"></span><span class="r"></span></div>
+    <p class="small text-2">Cuenta de Kraken {{ tip('account_leverage') }}: <span id="acct-lev">—</span> <span class="muted">(solo informativo)</span></p>
+  </section>
+</div>
+<section class="card">
+  <div class="card-head"><h2>Circuit breakers</h2>{{ tip('circuit_breaker') }}<span class="spacer"></span><span class="muted small">Bloquean solo entradas NUEVAS</span></div>
+  <div id="breakers-body"><span class="skeleton"></span></div>
+</section>
+<section class="card">
+  <div class="card-head"><h2>Parámetros de riesgo efectivos</h2><span class="spacer"></span><a class="small" href="/configuracion">Configuración →</a></div>
+  <dl class="kv" id="risk-params"></dl>
+</section>
+{{ controlbar(read_only, caps) }}
+{% endblock %}

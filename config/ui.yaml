@@ -1,0 +1,16 @@
+# Configuración de la interfaz (proceso separado del bot; NUNCA contiene claves de Kraken).
+host: 127.0.0.1            # solo local. Acceso remoto: Tailscale (tailscale serve), nunca puerto abierto
+port: 8050
+read_only: true            # por defecto SOLO LECTURA: no se puede enviar ningún comando al bot
+control_unlock_minutes: 5  # tras desbloquear el modo control, se vuelve a bloquear solo
+session_idle_minutes: 30
+session_max_hours: 12
+login_max_attempts: 5
+login_lockout_minutes: 15
+secure_cookies: false      # true si accedes por HTTPS (tailscale serve lo da); en http://127.0.0.1 debe ser false
+source: demo               # demo | bot
+mode: sim                  # sim | live (qué base de datos del bot leer cuando source = bot)
+bot_settings_path: config/settings.yaml   # solo se leen parámetros, nunca .env
+state_dir: state
+ui_db_path: ui-state/ui.sqlite   # base de datos PROPIA de la interfaz (usuarios, sesiones, auditoría)
+display_timezone: Europe/Madrid

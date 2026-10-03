@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip with context %}
+{% block content %}
+<h1>Configuración</h1>
+<div class="alert alert-info"><span class="icon">ℹ</span><div><strong>Desde aquí solo se puede REDUCIR el riesgo</strong>Una reducción se guarda como «override» que sobrevive a reinicios; el valor efectivo es el más prudente entre el fichero y el override. Para AUMENTAR un valor hay que editar <span class="mono">config/settings.yaml</span> y reiniciar el bot. Las claves API nunca se muestran ni se editan aquí.</div></div>
+<section class="card">
+  <div class="card-head"><h2>Riesgo y circuit breakers</h2>{{ tip('circuit_breaker') }}</div>
+  <div id="cfg-params"><span class="skeleton"></span></div>
+</section>
+<section class="card">
+  <div class="card-head"><h2>Estrategia</h2><span class="spacer"></span><span class="muted small">Solo lectura</span></div>
+  <dl class="kv" id="cfg-strategy"></dl>
+</section>
+<section class="card">
+  <div class="card-head"><h2>Preferencias de esta pantalla</h2><span class="spacer"></span><span class="muted small">Se guardan solo en este navegador</span></div>
+  <div class="form-grid">
+    <label class="check"><input type="checkbox" id="pref-classic"> Velas verde/rojo clásicas (siempre huecas/rellenas)</label>
+    <label class="check"><input type="checkbox" id="pref-local"> Mostrar fechas en hora de Madrid en lugar de UTC</label>
+  </div>
+</section>
+{% endblock %}

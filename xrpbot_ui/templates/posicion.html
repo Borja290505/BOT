@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip, controlbar with context %}
+{% block content %}
+<h1>Posición y órdenes</h1>
+<div id="pos-alert"></div>
+<section class="card" data-stale-group="market">
+  <div class="card-head"><h2>Posición</h2><span class="spacer"></span><span class="age" data-age-of="market"></span></div>
+  <div id="pos-body"><span class="skeleton"></span></div>
+</section>
+<section class="card" id="pos-liq-card" hidden>
+  <div class="card-head"><h2>Distancias</h2></div>
+  <div class="grid grid-2">
+    <div class="meter" id="meter-stop"><div class="meter-head">Al stop {{ tip('stop_loss') }}</div>
+      <div class="meter-track"><div class="meter-fill"></div></div><div class="meter-legend num"><span class="l"></span><span class="r"></span></div></div>
+    <div class="meter" id="meter-liq"><div class="meter-head">Margen hasta liquidación {{ tip('liquidation') }}</div>
+      <div class="meter-track"><div class="meter-fill"></div><div class="meter-mark"></div></div><div class="meter-legend num"><span class="l"></span><span class="r"></span></div></div>
+  </div>
+</section>
+<section class="card">
+  <div class="card-head"><h2>Órdenes abiertas</h2>{{ tip('reduce_only') }}{{ tip('oco') }}</div>
+  <div id="orders-body"><span class="skeleton"></span></div>
+</section>
+{{ controlbar(read_only, caps) }}
+{% endblock %}

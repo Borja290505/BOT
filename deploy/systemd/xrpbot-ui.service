@@ -1,0 +1,23 @@
+# /etc/systemd/system/xrpbot-ui.service  (ajusta User y rutas)
+# Proceso SEPARADO del bot y SIN claves: no lee .env. Escucha solo en 127.0.0.1.
+[Unit]
+Description=xrpbot - interfaz web (solo 127.0.0.1; acceso remoto por Tailscale)
+After=network-online.target
+
+[Service]
+User=xrpbot-ui
+WorkingDirectory=/opt/xrpbot
+ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot_ui
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# La interfaz solo escribe su propia base de datos (usuarios, sesiones, auditoría)
+ReadWritePaths=/opt/xrpbot/ui-state
+# Defensa adicional: el usuario xrpbot-ui no debe poder leer /opt/xrpbot/.env (chmod 600, dueño xrpbot)
+InaccessiblePaths=/opt/xrpbot/.env
+
+[Install]
+WantedBy=multi-user.target

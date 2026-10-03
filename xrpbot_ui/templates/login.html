@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Acceso · xrpbot</title>
+<script src="/static/js/theme.js"></script>
+<link rel="stylesheet" href="/static/css/tokens.css"><link rel="stylesheet" href="/static/css/components.css"><link rel="stylesheet" href="/static/css/app.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="login-page">
+<main class="login card">
+  <h1>xrpbot</h1>
+  <p class="text-2">Panel de monitorización y control</p>
+  {% if no_users %}
+  <div class="alert alert-warning"><span class="icon">⚠</span><div><strong>No hay ningún usuario</strong>Créalo en la máquina del bot con:<br><span class="mono">python -m xrpbot_ui set-password</span></div></div>
+  {% endif %}
+  {% if error %}<div class="alert alert-critical" role="alert"><span class="icon">✖</span><div>{{ error }}</div></div>{% endif %}
+  <form method="post" action="/login" class="grid" autocomplete="on">
+    <div class="field"><label for="u">Usuario</label><input class="input" id="u" name="username" value="admin" autocomplete="username" required></div>
+    <div class="field"><label for="p">Contraseña</label><input class="input" id="p" name="password" type="password" autocomplete="current-password" required autofocus></div>
+    <button class="btn btn-primary" type="submit">Entrar</button>
+  </form>
+  <p class="muted small">v{{ version }} · La sesión caduca tras 30 min de inactividad. Tras 5 intentos fallidos el acceso se bloquea 15 min.</p>
+</main>
+</body>
+</html>

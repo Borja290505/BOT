@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip with context %}
+{% block title %}Operación{% endblock %}
+{% block content %}
+<p><a href="/historial">← Historial</a></p>
+<h1>Operación <span class="mono" id="op-id">{{ trade_id }}</span></h1>
+<div class="grid grid-2">
+  <section class="card"><div class="card-head"><h2>Resumen</h2>{{ tip('r_multiple') }}</div><dl class="kv" id="op-kv"><span class="skeleton"></span></dl></section>
+  <section class="card"><div class="card-head"><h2>Cronología</h2></div><div id="op-timeline"><span class="skeleton"></span></div></section>
+</div>
+<section class="card"><div class="card-head"><h2>En el gráfico</h2></div>
+  <div class="chart" id="chart-op" role="img" aria-label="Velas alrededor de la operación"></div>
+  <p class="muted small" id="op-chart-note"></p>
+</section>
+{% endblock %}

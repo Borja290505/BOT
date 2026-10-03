@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Registro y alertas</h1>
+<div class="tabs" role="tablist" aria-label="Vistas">
+  <button class="tab" role="tab" aria-selected="true" aria-controls="tab-log" id="t-log" type="button">Registro</button>
+  <button class="tab" role="tab" aria-selected="false" aria-controls="tab-alerts" id="t-alerts" type="button">Alertas enviadas</button>
+  <button class="tab" role="tab" aria-selected="false" aria-controls="tab-audit" id="t-audit" type="button">Auditoría de control</button>
+</div>
+<section class="card" id="tab-log" role="tabpanel" aria-labelledby="t-log">
+  <form class="filters" id="log-filters">
+    <div class="field"><label for="l-level">Nivel mínimo</label><select class="input" id="l-level" name="level">
+      <option value="">Todos</option><option value="info">≥ INFO</option><option value="warning">≥ WARNING</option><option value="error">≥ ERROR</option><option value="critical">CRITICAL</option></select></div>
+    <div class="field"><label for="l-kind">Tipo</label><input class="input" id="l-kind" name="kind" placeholder="p. ej. command, reconcile"></div>
+    <div class="field grow"><label for="l-q">Buscar</label><input class="input" id="l-q" name="q" type="search" placeholder="Texto…"></div>
+  </form>
+  <div id="log-body"><span class="skeleton"></span></div>
+</section>
+<section class="card" id="tab-alerts" role="tabpanel" aria-labelledby="t-alerts" hidden><div id="alerts-body"></div></section>
+<section class="card" id="tab-audit" role="tabpanel" aria-labelledby="t-audit" hidden>
+  <p class="muted small">Cada inicio de sesión, desbloqueo y comando (aceptado o rechazado) queda registrado. No se puede borrar desde la interfaz.</p>
+  <div id="audit-body"></div>
+</section>
+{% endblock %}

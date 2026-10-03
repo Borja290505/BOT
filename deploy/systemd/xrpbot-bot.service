@@ -1,0 +1,22 @@
+# /etc/systemd/system/xrpbot-bot.service  (ajusta User y rutas)
+[Unit]
+Description=xrpbot - bot de trading PF_XRPUSD
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+User=xrpbot
+WorkingDirectory=/opt/xrpbot
+# Modo real: requiere XRPBOT_LIVE_CONFIRM en /opt/xrpbot/.env. Para SIM: --mode sim
+ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot.cli run --mode live --live
+Restart=always
+RestartSec=30
+# Endurecimiento
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xrpbot/state /opt/xrpbot/logs /opt/xrpbot/data
+
+[Install]
+WantedBy=multi-user.target

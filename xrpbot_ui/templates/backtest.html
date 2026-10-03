@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip with context %}
+{% block content %}
+<h1>Backtest</h1>
+<div class="alert alert-warning"><span class="icon">⚠</span><div><strong>Resultados simulados sobre datos pasados</strong>El rendimiento pasado no garantiza resultados futuros. Comisiones, slippage y funding son estimaciones; cada ajuste probado sobre los mismos datos aumenta el riesgo de sobreajuste.</div></div>
+<form class="card bt-form" id="bt-form" aria-label="Parámetros del backtest">
+  <div class="card-head"><h2>Parámetros</h2><span class="spacer"></span><span class="muted small" id="bt-data-note"></span></div>
+  <div class="form-grid">
+    <div class="field"><label for="bt-start">Desde</label><input class="input" type="date" id="bt-start" name="start"></div>
+    <div class="field"><label for="bt-end">Hasta</label><input class="input" type="date" id="bt-end" name="end"></div>
+    <div class="field"><label for="bt-entry">Canal de entrada {{ tip('donchian') }}</label><input class="input num" type="number" id="bt-entry" name="entry_lookback" min="5" max="200" step="1" value="20"><span class="hint">velas</span></div>
+    <div class="field"><label for="bt-exit">Canal de salida</label><input class="input num" type="number" id="bt-exit" name="exit_lookback" min="2" max="100" step="1" value="10"><span class="hint">velas</span></div>
+    <div class="field"><label for="bt-atrp">Periodo ATR {{ tip('atr') }}</label><input class="input num" type="number" id="bt-atrp" name="atr_period" min="5" max="100" step="1" value="14"></div>
+    <div class="field"><label for="bt-atrm">Stop (× ATR)</label><input class="input num" type="number" id="bt-atrm" name="atr_stop_mult" min="0.5" max="10" step="0.1" value="2"></div>
+    <div class="field"><label for="bt-tp">Take profit (R) {{ tip('r_multiple') }}</label><input class="input num" type="number" id="bt-tp" name="take_profit_r" min="0.5" max="20" step="0.5" value="4"></div>
+    <div class="field"><label for="bt-slip">Slippage {{ tip('slippage') }}</label><input class="input num" type="number" id="bt-slip" name="slippage_bps" min="0" max="100" step="1" value="5"><span class="hint">pb por ejecución</span></div>
+    <label class="check"><input type="checkbox" name="funding_filter" id="bt-ff"> Filtro de funding {{ tip('funding') }}</label>
+    <label class="check"><input type="checkbox" name="walkforward" id="bt-wf"> Incluir walk-forward {{ tip('walk_forward') }} <span class="muted small">(más lento)</span></label>
+  </div>
+  <div class="row-between"><span class="muted small" id="bt-status" aria-live="polite"></span><button class="btn btn-primary" type="submit" id="bt-run">▶ Ejecutar backtest</button></div>
+  <p class="error" id="bt-error" hidden></p>
+</form>
+
+<div id="bt-results" hidden>
+  <section class="card">
+    <div class="card-head"><h2>Resultados</h2><span class="spacer"></span><span class="muted small" id="bt-elapsed"></span></div>
+    <div class="metrics" id="bt-metrics"></div>
+    <p class="disclaimer" id="bt-disclaimer"></p>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Curva de capital y drawdown</h2>{{ tip('drawdown') }}</div>
+    <div class="chart chart-sm" id="chart-bt-equity" role="img" aria-label="Curva de capital del backtest"></div>
+    <div class="chart chart-xs" id="chart-bt-dd" role="img" aria-label="Drawdown del backtest"></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Con y sin funding</h2>{{ tip('funding') }}</div>
+    <div id="bt-funding"></div>
+  </section>
+  <section class="card" id="bt-wf-card" hidden>
+    <div class="card-head"><h2>Walk-forward por tramo</h2>{{ tip('walk_forward') }}</div>
+    <div id="bt-wf"></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Por régimen de mercado</h2></div>
+    <div id="bt-regimes"></div>
+  </section>
+</div>
+{% endblock %}

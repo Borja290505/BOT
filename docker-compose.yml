@@ -21,6 +21,16 @@ services:
   #   restart: unless-stopped
   #   volumes: [./state:/app/state, ./data:/app/data, ./logs:/app/logs, ./config:/app/config:ro]
 
+  # Interfaz web: proceso aparte, SIN .env (sin claves). network_mode host para que
+  # 127.0.0.1 sea el del servidor (Linux). Acceso remoto: tailscale serve en el host.
+  ui:
+    build: .
+    entrypoint: ["python", "-m", "xrpbot_ui"]
+    command: ["--config", "config/ui.yaml"]
+    network_mode: host
+    restart: unless-stopped
+    volumes: [./state:/app/state:ro, ./data:/app/data:ro, ./ui-state:/app/ui-state, ./config:/app/config:ro]
+
   cli:
     build: .
     profiles: ["tools"]

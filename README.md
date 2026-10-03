@@ -383,6 +383,28 @@ Después, **una sola vez**, el holdout: profit factor ≥ 1,1 y drawdown ≤ 20 
 
 ---
 
+## Interfaz web (`xrpbot_ui`)
+
+Panel para monitorizar y controlar el bot de forma segura. Es un **proceso
+aparte**: no tiene claves, solo escucha en 127.0.0.1 y por defecto funciona en
+solo lectura.
+
+```bat
+python -m xrpbot_ui set-password      # una vez: crea el usuario admin
+python -m xrpbot_ui --demo            # datos simulados con escenarios (bot caído, límite diario, LIVE PILOTO…)
+```
+
+Abre http://127.0.0.1:8050. Tiene 9 pantallas: Resumen, Mercado, Posición,
+Riesgo, Historial, Backtest, Configuración, Salud y Registro. Tema oscuro o
+claro, y adaptada a móvil.
+
+| Documento | Contenido |
+|---|---|
+| `docs/ui/DESPLIEGUE.md` | Windows (script, Programador de tareas, NSSM), Linux (systemd, Docker), Tailscale para el móvil, lista de seguridad |
+| `docs/ui/contrato.md` | Contrato bot ↔ interfaz (**pendiente de confirmar**) y cambios que necesitaría el bot |
+| `docs/ui/sistema-diseno.md` / `.html` | Sistema de diseño: colores validados para daltonismo, componentes, formatos |
+| `docs/ui/PENDIENTES.md` | Tareas pendientes |
+
 ## Desarrollo
 
 ```bash

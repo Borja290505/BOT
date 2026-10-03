@@ -16,3 +16,4 @@ state/*.sqlite*
 reports/
 state/*
 !state/.gitkeep
+ui-state/

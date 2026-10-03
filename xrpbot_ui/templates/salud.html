@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip with context %}
+{% block content %}
+<h1>Salud del sistema</h1>
+<div id="health-pending"></div>
+<div class="grid grid-2">
+  <section class="card"><div class="card-head"><h2>Conexión con Kraken</h2></div><dl class="kv" id="h-conn"></dl></section>
+  <section class="card"><div class="card-head"><h2>Datos</h2></div><dl class="kv" id="h-data"></dl></section>
+  <section class="card meter" id="meter-rate"><div class="card-head"><h2>Presupuesto de rate limit</h2></div>
+    <div class="meter-track" role="meter" aria-label="Uso del límite de peticiones"><div class="meter-fill"></div></div>
+    <div class="meter-legend num"><span class="l"></span><span class="r"></span></div></section>
+  <section class="card"><div class="card-head"><h2>Última reconciliación</h2>{{ tip('reconciliation') }}</div><div id="h-reconcile"></div></section>
+  <section class="card"><div class="card-head"><h2>Bot</h2></div><dl class="kv" id="h-bot"></dl></section>
+  <section class="card"><div class="card-head"><h2>Interfaz</h2></div><dl class="kv" id="h-ui"></dl></section>
+</div>
+{% endblock %}
