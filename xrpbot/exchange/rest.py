@@ -159,7 +159,8 @@ class KrakenFuturesRest:
                     raise KrakenAPIError(endpoint, f"respuesta inesperada (HTTP {status}): {text[:300]!r}")
                 self._update_clock(payload)
                 if payload.get("result") == "error":
-                    raise KrakenAPIError(endpoint, str(payload.get("error", "unknown")), payload)
+                    err = payload.get("error") or payload.get("errors") or f"sin detalle; respuesta: {text[:300]}"
+                    raise KrakenAPIError(endpoint, str(err), payload)
                 return payload
             except (aiohttp.ClientError, asyncio.TimeoutError, KrakenAPIError) as exc:
                 last_exc = exc

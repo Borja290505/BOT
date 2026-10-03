@@ -139,7 +139,7 @@ async def cmd_check(s: Settings) -> None:
 
 async def cmd_download(s: Settings, since: str | None) -> None:
     from .data.downloader import download_candles, download_funding
-    from .exchange.rest import KrakenFuturesRest
+    from .exchange.rest import KrakenAPIError, KrakenFuturesRest
 
     data_dir = Path(s.backtest.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -152,8 +152,12 @@ async def cmd_download(s: Settings, since: str | None) -> None:
         for tick_type in ("trade", "mark"):
             df = await download_candles(rest, data_dir, s.symbol, tick_type, "1h", since_ts)
             print(f"{tick_type}: {len(df)} velas ({df.index.min()} -> {df.index.max()})")
-        f = await download_funding(rest, data_dir, s.symbol)
-        print(f"funding: {len(f)} registros ({f.index.min()} -> {f.index.max()})")
+        try:
+            f = await download_funding(rest, data_dir, s.symbol)
+            print(f"funding: {len(f)} registros ({f.index.min()} -> {f.index.max()})")
+        except KrakenAPIError as exc:
+            print(f"AVISO: no se pudo descargar el funding histórico ({exc}). "
+                  "Las velas sí se guardaron; el backtest se hará sin funding.")
 
 
 def cmd_backtest(s: Settings, funding_filter: str, start: str | None, end: str | None, out: str) -> None:
