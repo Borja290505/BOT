@@ -235,7 +235,7 @@ stop y TP siguen en Kraken). Para disponibilidad real 24/7, un VPS con Docker
 - Riesgo del 1 % = distancia al stop + comisiones y slippage estimados de ida y
   vuelta. El tamaño se redondea **hacia abajo** al incremento del contrato; si
   queda por debajo del mínimo, no se opera.
-- Tope de apalancamiento efectivo sobre el nocional (`risk.max_leverage`, 10x
+- Tope de apalancamiento efectivo sobre el nocional (`risk.max_leverage`, 2x
   por defecto, máximo permitido 10x). Solo actúa con stops muy cercanos: con
   10x, stops a menos del ~0,1 %; con 2x, a menos del 0,5 %. En ese caso se
   arriesga **menos** del 1 %. Subir el tope no aumenta el riesgo por
