@@ -20,7 +20,7 @@ capital:
 risk:
   risk_per_trade: 0.01            # 1 % del capital por operación
   max_daily_loss: 0.03            # 3 %: se detiene y exige rearme manual
-  max_leverage: 2.0               # apalancamiento EFECTIVO máximo (nocional / capital)
+  max_leverage: 10.0              # apalancamiento EFECTIVO máximo (nocional / capital); máximo permitido 10
   max_open_positions: 1
   # El precio de liquidación estimado debe quedar al menos N veces más lejos
   # de la entrada que el stop.

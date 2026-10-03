@@ -211,19 +211,24 @@ python -m xrpbot.cli run                     # demo
 - Riesgo del 1 % = distancia al stop + comisiones y slippage estimados de ida y
   vuelta. El tamaño se redondea **hacia abajo** al incremento del contrato; si
   queda por debajo del mínimo, no se opera.
-- Tope de 2x de apalancamiento efectivo sobre el nocional. Con stops de menos
-  del 0,5 % el tope manda y se arriesga **menos** del 1 % (es intencionado).
+- Tope de apalancamiento efectivo sobre el nocional (`risk.max_leverage`, 10x
+  por defecto, máximo permitido 10x). Solo actúa con stops muy cercanos: con
+  10x, stops a menos del ~0,1 %; con 2x, a menos del 0,5 %. En ese caso se
+  arriesga **menos** del 1 %. Subir el tope no aumenta el riesgo por
+  operación, pero sí el tamaño de las posiciones con stop cercano y el daño de
+  un hueco de precio.
 - **El 1 % no es un máximo garantizado:** un hueco de precio puede saltarse el
   stop. El backtest lo modela: sale a la apertura si la vela abre más allá del
   stop.
 
 ### Liquidación y margen
-- Se intenta fijar margen **aislado** a 2x. Si no es posible, se opera en
+- Se intenta fijar margen **aislado** al apalancamiento máximo configurado. Si no es posible, se opera en
   **cruzado** y se avisa: en ese caso deja en la cuenta de futuros solo el
   capital del bot.
 - La liquidación estimada debe quedar al menos 3 veces más lejos que el stop.
-  Es una estimación (Kraken usa tramos de margen); a 2x queda a ~49 % del
-  precio en aislado, muy lejos de cualquier stop de esta estrategia.
+  Es una estimación (Kraken usa tramos de margen). En aislado queda a ~49 % del
+  precio con 2x y a ~9 % con 10x: con 10x, un movimiento brusco de XRP puede
+  liquidar la posición, y el bot rechaza las entradas con stop a más del ~3 %.
 
 ### Funding
 - Se incluye en el backtest como pago horario. En vivo, el campo `funding` de

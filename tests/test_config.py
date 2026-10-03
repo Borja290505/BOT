@@ -49,3 +49,10 @@ def test_secrets_never_from_yaml(tmp_path):
 def test_invalid_config_rejected(tmp_path, bad):
     with pytest.raises(ConfigError):
         load_settings(write(tmp_path, bad), env_file=None)
+
+
+def test_leverage_up_to_10_allowed(tmp_path):
+    s = load_settings(write(tmp_path, {"risk": {"max_leverage": 10}}), env_file=None)
+    assert s.risk.max_leverage == 10
+    with pytest.raises(ConfigError):
+        load_settings(write(tmp_path, {"risk": {"max_leverage": 10.5}}), env_file=None)

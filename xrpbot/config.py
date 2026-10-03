@@ -184,8 +184,8 @@ class Settings:
             raise ConfigError("max_daily_loss debe estar en (0, 10 %]")
         if r.max_daily_loss < r.risk_per_trade:
             raise ConfigError("max_daily_loss no puede ser menor que risk_per_trade")
-        if not 0 < r.max_leverage <= 5:
-            raise ConfigError("max_leverage debe estar en (0, 5]")
+        if not 0 < r.max_leverage <= 10:
+            raise ConfigError("max_leverage debe estar en (0, 10]")
         if r.max_open_positions != 1:
             raise ConfigError("Esta versión solo soporta max_open_positions = 1")
         if r.margin_mode not in ("isolated", "cross"):
