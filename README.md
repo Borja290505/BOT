@@ -158,6 +158,30 @@ python -m xrpbot.cli run                     # demo
   que demo, sim y real nunca se mezclan. Pasa siempre `--mode` a `kill`,
   `rearm`, `status` y `export`.
 
+### Funcionamiento 24/7 en Windows
+
+1. Añade al `.env` la confirmación del modo real (sustituye a escribir la
+   frase en cada arranque; quítala si dejas de operar en real):
+   ```
+   XRPBOT_LIVE_CONFIRM=OPERAR EN REAL PF_XRPUSD
+   ```
+2. Evita que el PC se suspenda (cmd como administrador):
+   ```bat
+   powercfg /change standby-timeout-ac 0
+   powercfg /change hibernate-timeout-ac 0
+   ```
+3. Arranca con reinicio automático: doble clic en `scripts\run_live.bat`, o
+   desde la terminal `scripts\run_live.bat`. Si el bot se cae (corte de red,
+   error), se vuelve a arrancar a los 60 s y reconcilia con Kraken.
+4. Opcional, para que arranque al iniciar sesión: Programador de tareas ->
+   Crear tarea básica -> "Al iniciar sesión" -> Iniciar un programa ->
+   `scripts\run_live.bat` (con "Iniciar en" = la carpeta del bot).
+
+Limitaciones: si el PC se apaga, se reinicia por actualizaciones de Windows o
+pierde internet un rato, el bot no opera durante ese tiempo (las órdenes de
+stop y TP siguen en Kraken). Para disponibilidad real 24/7, un VPS con Docker
+(ver arriba).
+
 ### Comportamiento ante incidencias
 
 | Situación | Reacción |

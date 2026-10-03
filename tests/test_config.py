@@ -56,3 +56,19 @@ def test_leverage_up_to_10_allowed(tmp_path):
     assert s.risk.max_leverage == 10
     with pytest.raises(ConfigError):
         load_settings(write(tmp_path, {"risk": {"max_leverage": 10.5}}), env_file=None)
+
+
+def test_live_confirmation_by_env_skips_prompt(tmp_path, monkeypatch):
+    import xrpbot.cli as cli
+
+    s = load_settings(write(tmp_path, {"mode": "live"}), env_file=None)
+    monkeypatch.setattr(cli.sys.stdin, "isatty", lambda: True, raising=False)
+    monkeypatch.setattr("builtins.input", lambda *_: pytest.fail("no debe pedir la frase"))
+    monkeypatch.setenv("XRPBOT_LIVE_CONFIRM", "OPERAR EN REAL PF_XRPUSD")
+    cli.confirm_live(s, True)
+    monkeypatch.setenv("XRPBOT_LIVE_CONFIRM", "otra cosa")
+    monkeypatch.setattr("builtins.input", lambda *_: "mal")
+    with pytest.raises(SystemExit):
+        cli.confirm_live(s, True)
+    with pytest.raises(SystemExit):
+        cli.confirm_live(s, False)

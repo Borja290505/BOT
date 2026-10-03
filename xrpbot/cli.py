@@ -286,11 +286,12 @@ def confirm_live(s: Settings, flag: bool) -> None:
     print(f" MODO REAL: dinero real en {s.symbol}. Riesgo {s.risk.risk_per_trade:.1%}/operación, "
           f"pérdida diaria máx {s.risk.max_daily_loss:.1%}, apalancamiento máx {s.risk.max_leverage}x")
     print("=" * 70)
+    # Confirmación explícita por entorno/.env: necesaria para arranques desatendidos
+    # (reinicio automático, Docker, systemd), donde nadie puede escribir la frase.
+    if os.getenv("XRPBOT_LIVE_CONFIRM", "").strip() == phrase:
+        print("Confirmación de live recibida por XRPBOT_LIVE_CONFIRM")
+        return
     if not sys.stdin.isatty():
-        # Docker/systemd sin terminal: la confirmación debe venir explícita en el entorno
-        if os.getenv("XRPBOT_LIVE_CONFIRM", "").strip() == phrase:
-            print("Confirmación de live recibida por XRPBOT_LIVE_CONFIRM")
-            return
         raise SystemExit(f"Sin terminal: define XRPBOT_LIVE_CONFIRM='{phrase}' para confirmar el modo real")
     if input(f"Escribe exactamente '{phrase}' para continuar: ").strip() != phrase:
         raise SystemExit("Confirmación incorrecta: abortado")
