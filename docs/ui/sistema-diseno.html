@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema de diseño · xrpbot</title>
+<link rel="stylesheet" href="../../xrpbot_ui/static/css/tokens.css">
+<link rel="stylesheet" href="../../xrpbot_ui/static/css/components.css">
+<style>
+  .sg { max-width: 1100px; margin: 0 auto; padding: var(--sp-5) var(--sp-4) var(--sp-7); display: grid; gap: var(--sp-6); }
+  .sg section { display: grid; gap: var(--sp-3); }
+  .sg h2 { border-bottom: 1px solid var(--border); padding-bottom: var(--sp-2); }
+  .sg .row { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+  .sw { width: 148px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-1); }
+  .sw .c { height: 44px; }
+  .sw .t { padding: var(--sp-2); font-size: var(--fs-xs); }
+  .sw .t b { display: block; }
+  .demo-band { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .demo-band .mode-band { position: static; }
+  .demo-band.app { min-height: 0; display: block; }
+  .spc { display: flex; align-items: end; gap: var(--sp-2); }
+  .spc div { background: var(--info); width: 24px; }
+  .static-dialog { position: static; display: block; margin: 0; }
+  .phone { width: 360px; border: 1px solid var(--border-strong); border-radius: 18px; overflow: hidden; background: var(--bg); }
+</style>
+</head>
+<body>
+<div class="sg">
+  <header class="row">
+    <h1>Sistema de diseño · xrpbot</h1>
+    <span class="spacer" style="flex:1"></span>
+    <button class="btn" id="theme-toggle" type="button">◐ Tema: <span id="theme-name">oscuro</span></button>
+  </header>
+  <p class="text-2">Referencia visual de tokens, componentes y estados. Fuente de verdad: <span class="mono">xrpbot_ui/static/css/tokens.css</span> y <span class="mono">components.css</span>. Documento: <span class="mono">docs/ui/sistema-diseno.md</span>.</p>
+
+  <section>
+    <h2>1. Color</h2>
+    <h3 class="text-2">Superficies y texto</h3>
+    <div class="row" id="sw-base"></div>
+    <h3 class="text-2">Estado (reservado: solo significa estado, siempre con icono y texto)</h3>
+    <div class="row" id="sw-status"></div>
+    <h3 class="text-2">Gráficos (validados para daltonismo)</h3>
+    <div class="row" id="sw-chart"></div>
+  </section>
+
+  <section>
+    <h2>2. Tipografía y espaciado</h2>
+    <div class="card grid" style="gap:var(--sp-2)">
+      <div style="font-size:var(--fs-2xl);font-weight:var(--fw-bold)" class="num">32 · 14,60 USD</div>
+      <div style="font-size:var(--fs-xl);font-weight:var(--fw-bold)">24 · Título de pantalla</div>
+      <div style="font-size:var(--fs-lg);font-weight:var(--fw-bold)">20 · Título de sección</div>
+      <div style="font-size:var(--fs-md)">16 · Texto destacado</div>
+      <div>14 · Texto base de la interfaz (tamaño por defecto)</div>
+      <div style="font-size:var(--fs-xs)" class="text-2">12 · Etiquetas, ejes y notas</div>
+      <div class="mono">Monoespaciada · IDs y precios: xrpusd-20261003T1400-L-sl-3 · 1,4851</div>
+      <div class="num">Cifras tabulares: 1,4851 · 11,1111 · −0,12 USD</div>
+    </div>
+    <div class="card spc" aria-label="Escala de espaciado">
+      <div style="height:4px"></div><div style="height:8px"></div><div style="height:12px"></div><div style="height:16px"></div><div style="height:24px"></div><div style="height:32px"></div><div style="height:48px"></div>
+      <span class="text-2" style="margin-left:var(--sp-3)">4 · 8 · 12 · 16 · 24 · 32 · 48 px</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Cabecera de modo (siempre visible)</h2>
+    <div class="demo-band app" data-mode="sim">
+      <div class="mode-band">
+        <span class="badge badge-sim">◆ SIM</span><span class="text-2">Simulado · sin dinero real</span>
+        <span class="status status-good"><span class="icon" aria-hidden="true">●</span>ACTIVO</span>
+        <span class="spacer"></span>
+        <span class="clock num">16:42:05 UTC · 18:42 Madrid</span>
+        <button class="lock" type="button">🔒 Solo lectura</button>
+      </div>
+    </div>
+    <div class="demo-band app" data-mode="live">
+      <div class="mode-band">
+        <span class="badge badge-live">▲ LIVE</span><strong>DINERO REAL</strong>
+        <span class="badge badge-pilot">PILOTO · tope 50 USD</span>
+        <span class="status status-good"><span class="icon" aria-hidden="true">●</span>ACTIVO</span>
+        <span class="spacer"></span>
+        <span class="clock num">16:42:05 UTC · 18:42 Madrid</span>
+        <button class="lock" type="button" data-unlocked="true">🔓 Control · se bloquea en 4:32</button>
+      </div>
+    </div>
+    <p class="text-2">En LIVE: franja ámbar con la palabra «DINERO REAL» y borde de 4 px alrededor de toda la ventana. «PILOTO» aparece si hay un tope de nocional activo.</p>
+  </section>
+
+  <section>
+    <h2>4. Estados del bot (icono + texto + color)</h2>
+    <div class="row">
+      <span class="status status-good"><span class="icon" aria-hidden="true">●</span>ACTIVO</span>
+      <span class="status status-neutral"><span class="icon" aria-hidden="true">⏸</span>PAUSADO</span>
+      <span class="status status-serious"><span class="icon" aria-hidden="true">⛔</span>DETENIDO · límite diario</span>
+      <span class="status status-critical"><span class="icon" aria-hidden="true">❄</span>CONGELADO · discrepancia</span>
+      <span class="status status-critical"><span class="icon" aria-hidden="true">✖</span>CAÍDO · sin latido hace 42 s</span>
+      <span class="status status-warning"><span class="icon" aria-hidden="true">⟳</span>RECONECTANDO</span>
+      <span class="status status-neutral"><span class="icon" aria-hidden="true">◌</span>ARRANCANDO</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>5. Cifras principales</h2>
+    <div class="grid grid-4">
+      <div class="card stat"><div class="label">P&amp;L hoy</div><div class="value pnl-neg">▼ −0,12 USD</div><div class="sub">−0,8 % del capital al inicio del día</div></div>
+      <div class="card stat"><div class="label">P&amp;L latente <button class="tip" type="button" aria-label="Qué es el P&L latente">i</button></div><div class="value pnl-pos">▲ +0,04 USD</div><div class="sub">+0,3 R</div></div>
+      <div class="card stat"><div class="label">Capital (equity)</div><div class="value">14,60 USD</div><div class="sub age">hace 3 s</div></div>
+      <div class="card stat"><div class="label">Capital (equity)</div><div class="value stale">14,60 USD</div><div class="sub age is-stale">⏱ hace 2 min · dato desfasado</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. Medidores</h2>
+    <div class="grid grid-2">
+      <div class="card meter" data-level="good">
+        <div class="card-head"><h3>Pérdida diaria consumida</h3></div>
+        <div class="meter-track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="40" aria-label="Pérdida diaria: 40 % del límite"><div class="meter-fill" style="width:40%"></div></div>
+        <div class="meter-legend num"><span>0,18 de 0,45 USD (40 %)</span><span>Reinicio en 7 h 18 min</span></div>
+      </div>
+      <div class="card meter" data-level="serious">
+        <div class="card-head"><h3>Pérdida diaria consumida</h3><span class="spacer"></span><span class="status status-serious" style="font-size:12px"><span class="icon">⚠</span>CERCA DEL LÍMITE</span></div>
+        <div class="meter-track"><div class="meter-fill" style="width:86%"></div></div>
+        <div class="meter-legend num"><span>0,39 de 0,45 USD (86 %)</span><span>Al 100 %: cierra todo y se detiene</span></div>
+      </div>
+      <div class="card meter" data-level="good">
+        <div class="card-head"><h3>Apalancamiento efectivo <button class="tip" type="button" aria-label="Qué es el apalancamiento efectivo">i</button></h3></div>
+        <div class="meter-track"><div class="meter-fill" style="width:36%"></div><div class="meter-mark" style="left:100%" title="Límite del bot 2×"></div></div>
+        <div class="meter-legend num"><span>0,72× de 2× (límite del bot)</span><span>Cuenta Kraken: 2× (informativo)</span></div>
+      </div>
+      <div class="card meter" data-level="critical">
+        <div class="card-head"><h3>Margen hasta liquidación</h3><span class="spacer"></span><span class="status status-critical" style="font-size:12px"><span class="icon">⚠</span>LIQUIDACIÓN CERCANA</span></div>
+        <div class="meter-track"><div class="meter-fill" style="width:18%"></div></div>
+        <div class="meter-legend num"><span>Liquidación a 1,8 % · stop a 1,5 %</span><span>Mínimo exigido: 3× la distancia al stop</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>7. Circuit breakers (tabla)</h2>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Estado</th><th>Condición</th><th class="r">Actual</th><th class="r">Umbral</th></tr></thead>
+        <tbody>
+          <tr><td><span class="status status-good" style="font-size:12px"><span class="icon">✔</span>OK</span></td><td>Spread</td><td class="r">3,1 pb</td><td class="r">≤ 15 pb</td></tr>
+          <tr><td><span class="status status-warning" style="font-size:12px"><span class="icon">⚠</span>BLOQUEA</span></td><td>ATR / mediana 30 d</td><td class="r">3,4×</td><td class="r">≤ 3,0×</td></tr>
+          <tr><td><span class="status status-good" style="font-size:12px"><span class="icon">✔</span>OK</span></td><td>Antigüedad del ticker</td><td class="r">2 s</td><td class="r">≤ 30 s</td></tr>
+          <tr class="stale"><td><span class="status status-neutral" style="font-size:12px"><span class="icon">?</span>SIN DATO</span></td><td>Profundidad ±0,5 %</td><td class="r">—</td><td class="r">≥ 3× tamaño</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>8. Avisos</h2>
+    <div class="alert alert-info"><span class="icon">ℹ</span><div><strong>Información</strong>Reducción aplicada: riesgo por operación 0,5 % (override). Efectivo desde el siguiente ciclo.</div></div>
+    <div class="alert alert-warning"><span class="icon">⚠</span><div><strong>Señal bloqueada</strong>Volatilidad anómala: ATR 3,4× su mediana. La posición abierta sigue protegida.</div></div>
+    <div class="alert alert-serious"><span class="icon">⛔</span><div><strong>Detenido por límite diario</strong>Pérdida del 3,0 % alcanzada a las 14:12 UTC. Se ha cerrado todo. Rearme manual necesario.</div></div>
+    <div class="alert alert-critical"><span class="icon">❄</span><div><strong>Bot congelado: discrepancia en la reconciliación</strong>Posición desconocida en Kraken (largo 100 XRP). Se ha puesto un stop de emergencia. Revisa la cuenta antes de rearmar.</div></div>
+  </section>
+
+  <section>
+    <h2>9. Glosario ⓘ</h2>
+    <p>El <span class="term">mark price</span><button class="tip" type="button" aria-expanded="true" aria-controls="tip-demo" aria-label="Qué es el mark price">i</button> se usa para disparar el stop.</p>
+    <div class="tip-pop" id="tip-demo" role="tooltip" style="position:static">
+      <strong>Mark price</strong> — precio de referencia que calcula Kraken a partir de varios mercados. Se usa para liquidaciones y para disparar el stop del bot, porque es más estable que el último precio negociado y no lo mueve una sola operación aislada.
+    </div>
+  </section>
+
+  <section>
+    <h2>10. Botones, candado y formulario</h2>
+    <div class="row">
+      <button class="btn btn-primary">Ejecutar backtest</button>
+      <button class="btn">⏸ Pausar entradas</button>
+      <button class="btn btn-danger-outline">✖ Cerrar posición</button>
+      <button class="btn btn-danger">⛔ KILL SWITCH</button>
+      <button class="btn" disabled>⏸ Pausar (solo lectura)</button>
+      <button class="lock" type="button">🔒 Solo lectura · desbloquear control</button>
+    </div>
+    <div class="card grid" style="max-width:420px">
+      <div class="field">
+        <label for="f1">Riesgo por operación (actual 1,0 %)</label>
+        <input class="input num" id="f1" value="1,5" aria-invalid="true" aria-describedby="f1e f1h">
+        <span class="error" id="f1e">✖ Solo se puede reducir. Para aumentarlo, edita config/settings.yaml y reinicia el bot.</span>
+        <span class="hint" id="f1h">Valor efectivo = el menor entre el fichero y la reducción.</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>11. Diálogo de confirmación (cierre de posición en LIVE)</h2>
+    <div class="confirm static-dialog" role="dialog" aria-labelledby="dlg-t" style="max-width:480px;border:1px solid var(--border-strong);border-radius:var(--radius);background:var(--surface-1);overflow:hidden">
+      <div class="live-strip">▲ LIVE · DINERO REAL</div>
+      <div class="body" style="padding:var(--sp-4);display:grid;gap:var(--sp-3)">
+        <div class="steps"><span>1 · Revisar</span><span class="on">2 · Confirmar</span></div>
+        <h3 id="dlg-t">Cerrar la posición a mercado</h3>
+        <p class="text-2" style="margin:0">Se cerrarán <strong class="num">7 XRP</strong> (≈ 10,42 USD) a precio de mercado, se cancelarán el stop y el take profit y se <strong>pausarán las entradas</strong>. Para volver a operar tendrás que pulsar «Reanudar».</p>
+        <div class="field"><label for="dlg-w">Escribe <strong>CERRAR</strong> para confirmar</label><input class="input" id="dlg-w" autocomplete="off" placeholder="CERRAR"></div>
+      </div>
+      <div class="actions" style="display:flex;justify-content:flex-end;gap:var(--sp-2);padding:var(--sp-3) var(--sp-4);border-top:1px solid var(--border)">
+        <button class="btn">Cancelar</button><button class="btn btn-danger" disabled>Cerrar posición</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>12. Estados de datos</h2>
+    <div class="grid grid-2">
+      <div class="card"><div class="card-head"><h3>Cargando</h3></div><span class="skeleton" style="width:60%"></span><br><span class="skeleton" style="width:40%"></span></div>
+      <div class="card empty"><span class="icon" aria-hidden="true">∅</span>Todavía no hay operaciones.<br><span class="muted">Aparecerán aquí cuando el bot cierre la primera.</span></div>
+      <div class="card overlay-host" style="min-height:150px">
+        <div class="stale"><div class="stat"><div class="label">Capital</div><div class="value">14,60 USD</div></div></div>
+        <div class="overlay"><div class="panel"><span class="status status-critical"><span class="icon">✖</span>BOT CAÍDO</span><p class="text-2">Sin latido desde hace 42 s. Los datos mostrados son los últimos conocidos. Controles desactivados.</p></div></div>
+      </div>
+      <div class="alert alert-warning"><span class="icon">⟳</span><div><strong>Sin conexión con la interfaz</strong>Reintentando en 5 s… Mostrando los últimos datos (hace 18 s).</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>13. Gráfico de mercado</h2>
+    <div class="card">
+      <div class="card-head"><h3>XRP/USD · PF_XRPUSD · 1 h</h3></div>
+      <div class="legend" style="margin-bottom:var(--sp-2)">
+        <span class="key"><svg width="12" height="14" aria-hidden="true"><rect x="1" y="1" width="10" height="12" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/></svg>Vela alcista (hueca)</span>
+        <span class="key"><svg width="12" height="14" aria-hidden="true"><rect x="1" y="1" width="10" height="12" rx="2" style="fill:var(--chart-down)"/></svg>Vela bajista (rellena)</span>
+        <span class="key" style="color:var(--chart-ind-1)"><span class="swatch dashed"></span><span class="text-2">Canal Donchian</span></span>
+        <span class="key" style="color:var(--level-stop)"><span class="swatch"></span><span class="text-2">Stop</span></span>
+        <span class="key" style="color:var(--level-liq)"><span class="swatch dotted"></span><span class="text-2">Liquidación</span></span>
+      </div>
+      <svg viewBox="0 0 560 220" width="100%" style="max-height:340px" role="img" aria-label="Ejemplo de velas con canal Donchian y niveles de la posición"><line x1="20" x2="20" y1="129.7" y2="140.9" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="15" y="133.8" width="10" height="5.4" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="41" x2="41" y1="131.8" y2="147.1" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="36" y="139.2" width="10" height="6.3" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="62" x2="62" y1="125.9" y2="153.6" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="57" y="129.2" width="10" height="16.2" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="83" x2="83" y1="123.5" y2="130.7" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="78" y="126.6" width="10" height="2.6" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="104" x2="104" y1="119.8" y2="158.3" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="99" y="126.6" width="10" height="27.7" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="125" x2="125" y1="134.5" y2="168.1" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="120" y="147.8" width="10" height="6.5" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="146" x2="146" y1="144.2" y2="165.5" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="141" y="147.8" width="10" height="15.3" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="167" x2="167" y1="159.1" y2="170.2" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="162" y="163.2" width="10" height="2.0" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="188" x2="188" y1="158.6" y2="170.3" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="183" y="161.7" width="10" height="3.5" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="209" x2="209" y1="131.7" y2="171.0" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="204" y="136.1" width="10" height="25.6" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="230" x2="230" y1="130.2" y2="149.9" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="225" y="136.1" width="10" height="11.1" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="251" x2="251" y1="140.0" y2="149.2" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="246" y="144.9" width="10" height="2.3" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="272" x2="272" y1="137.4" y2="152.1" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="267" y="144.9" width="10" height="3.1" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="293" x2="293" y1="118.5" y2="150.0" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="288" y="124.9" width="10" height="23.1" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="314" x2="314" y1="102.3" y2="125.3" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="309" y="114.2" width="10" height="10.7" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="335" x2="335" y1="73.2" y2="116.7" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="330" y="89.4" width="10" height="24.8" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="356" x2="356" y1="80.5" y2="93.4" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="351" y="87.1" width="10" height="2.3" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="377" x2="377" y1="72.2" y2="93.7" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="372" y="84.0" width="10" height="3.0" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="398" x2="398" y1="61.6" y2="95.6" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="393" y="69.2" width="10" height="14.8" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="419" x2="419" y1="58.3" y2="79.8" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="414" y="59.3" width="10" height="9.9" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="440" x2="440" y1="40.2" y2="63.0" style="stroke:var(--chart-up)" stroke-width="2"/><rect x="435" y="45.2" width="10" height="14.1" rx="2" style="fill:var(--surface-1);stroke:var(--chart-up)" stroke-width="2"/><line x1="461" x2="461" y1="37.3" y2="66.1" style="stroke:var(--chart-down)" stroke-width="2"/><rect x="456" y="45.2" width="10" height="16.6" rx="2" style="fill:var(--chart-down);stroke:var(--chart-down)" stroke-width="2"/><line x1="0" x2="484" y1="58.3" y2="58.3" style="stroke:var(--chart-ind-1)" stroke-width="2" stroke-dasharray="6 4"/><rect x="486" y="49.3" width="72" height="18" rx="3" style="fill:var(--chart-ind-1)"/><text x="522" y="62.3" text-anchor="middle" style="fill:#1a1a19;font:600 11px var(--font-ui)">DC 1,5224</text><line x1="0" x2="484" y1="87.1" y2="87.1" style="stroke:var(--level-entry)" stroke-width="2" stroke-dasharray="2 3"/><rect x="486" y="78.1" width="72" height="18" rx="3" style="fill:var(--level-entry)"/><text x="522" y="91.1" text-anchor="middle" style="fill:var(--bg);font:600 11px var(--font-ui)">ENTRADA</text><line x1="0" x2="484" y1="119.3" y2="119.3" style="stroke:var(--level-stop)" stroke-width="2" /><rect x="486" y="110.3" width="72" height="18" rx="3" style="fill:var(--level-stop)"/><text x="522" y="123.3" text-anchor="middle" style="fill:#1a1a19;font:600 11px var(--font-ui)">STOP</text><line x1="0" x2="484" y1="171.0" y2="171.0" style="stroke:var(--chart-ind-1)" stroke-width="2" stroke-dasharray="6 4"/><rect x="486" y="162.0" width="72" height="18" rx="3" style="fill:var(--chart-ind-1)"/><text x="522" y="175.0" text-anchor="middle" style="fill:#1a1a19;font:600 11px var(--font-ui)">DC 1,4591</text><line x1="0" x2="484" y1="202.3" y2="202.3" style="stroke:var(--level-liq)" stroke-width="2" stroke-dasharray="1 4"/><rect x="486" y="193.3" width="72" height="18" rx="3" style="fill:var(--level-liq)"/><text x="522" y="206.3" text-anchor="middle" style="fill:#ffffff;font:600 11px var(--font-ui)">LIQ</text></svg>
+      <p class="disclaimer">En la aplicación: TradingView Lightweight Charts, con cruz y tooltip al pasar el ratón. Cada nivel lleva etiqueta en el eje; el color no es el único código.</p>
+    </div>
+  </section>
+</div>
+<script>
+  // Tema: oscuro por defecto; la elección se recuerda en este navegador.
+  const root = document.documentElement;
+  function apply(t){ if(t==='light'){root.dataset.theme='light'} else {delete root.dataset.theme}
+    document.getElementById('theme-name').textContent = t==='light' ? 'claro' : 'oscuro'; }
+  let t='dark'; try { t = localStorage.getItem('xrpbot-theme') || 'dark' } catch(e) {}
+  apply(t);
+  document.getElementById('theme-toggle').onclick = () => { t = t==='light'?'dark':'light'; apply(t);
+    try { localStorage.setItem('xrpbot-theme', t) } catch(e) {} ; draw(); };
+  // Muestras de color leídas de los tokens (así reflejan el tema activo)
+  const groups = {
+    'sw-base': ['--bg','--surface-1','--surface-2','--border','--text','--text-2','--text-muted','--focus'],
+    'sw-status': ['--good','--warning','--serious','--critical','--info','--mode-live'],
+    'sw-chart': ['--chart-up','--chart-down','--chart-ind-1','--level-entry','--level-tp','--level-stop','--level-liq'],
+  };
+  function draw(){ const cs = getComputedStyle(root);
+    for (const [id, toks] of Object.entries(groups)) {
+      document.getElementById(id).innerHTML = toks.map(k => { const v = cs.getPropertyValue(k).trim();
+        return `<div class="sw"><div class="c" style="background:${v}"></div><div class="t"><b class="mono">${k}</b><span class="mono muted">${v}</span></div></div>`; }).join('');
+    } }
+  draw();
+</script>
+</body>
+</html>
