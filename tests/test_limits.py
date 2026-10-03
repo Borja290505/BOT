@@ -78,3 +78,11 @@ def test_liquidation_safety():
     assert not ok
     ok, _ = liquidation_is_safe(side=Side.SHORT, entry=0.5, stop=0.55, liq_price=0.75, min_multiple=3)
     assert ok
+
+
+def test_zero_reference_is_replaced_when_funds_arrive():
+    g = DailyLossGuard(DictStore(), 0.03)
+    g.check(0.0, T0)                       # arranca con la cuenta de futuros vacía
+    st = g.check(50.0, T0)                 # se transfieren 50 USD
+    assert st.day_start_equity == 50.0
+    assert g.check(48.0, T0).halted        # -4 % sobre 50 -> parada
