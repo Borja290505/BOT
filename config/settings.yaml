@@ -75,6 +75,16 @@ backtest:
     size_step: 1.0
     min_size: 1.0
     maintenance_margin: 0.01      # PROVISIONAL: verificar con /instruments
+  # Perfiles de costes para comparar con otros mercados: backtest --costs margin
+  # Margen de Kraken spot (Kraken Pro), nivel de volumen inicial. VERIFICA tus comisiones reales
+  # en Kraken Pro → Configuración → Comisiones y ajústalas aquí.
+  cost_profiles:
+    margin:
+      taker_fee: 0.0040           # 0,40 %
+      maker_fee: 0.0025           # 0,25 %
+      open_fee: 0.0002            # 0,02 % al abrir la posición de margen
+      rollover_fee_per_4h: 0.0002 # 0,02 % cada 4 h con la posición abierta
+      slippage_bps: 5
 
 walkforward:
   train_months: 12
