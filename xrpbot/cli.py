@@ -86,18 +86,27 @@ def _load_market(s: Settings):
     return candles, mark, funding
 
 
-def _bt_config(s: Settings):
+def _bt_config(s: Settings, costs: str = "futures"):
     from .backtest.engine import BacktestConfig
 
     spec, fees = _offline_spec_and_fees(s)
-    print(f"Comisiones backtest: maker {fees.maker:.4%} taker {fees.taker:.4%} ({fees.source}); "
-          f"slippage {s.backtest.slippage_bps} bps")
-    return BacktestConfig(
-        initial_capital=s.capital.backtest_initial_usd, spec=spec, risk_per_trade=s.risk.risk_per_trade,
-        max_leverage=s.risk.max_leverage, max_daily_loss=s.risk.max_daily_loss, taker_fee=fees.taker,
-        maker_fee=fees.maker, slippage_bps=s.backtest.slippage_bps,
-        tp_post_only=s.execution.take_profit_post_only,
-        min_liq_distance_multiple=s.risk.min_liq_distance_multiple)
+    base = dict(initial_capital=s.capital.backtest_initial_usd, spec=spec, risk_per_trade=s.risk.risk_per_trade,
+                max_leverage=s.risk.max_leverage, max_daily_loss=s.risk.max_daily_loss,
+                tp_post_only=s.execution.take_profit_post_only,
+                min_liq_distance_multiple=s.risk.min_liq_distance_multiple)
+    if costs == "futures":
+        print(f"Costes FUTUROS: maker {fees.maker:.4%} taker {fees.taker:.4%} ({fees.source}); "
+              f"slippage {s.backtest.slippage_bps} pb; funding histórico si está descargado")
+        return BacktestConfig(**base, taker_fee=fees.taker, maker_fee=fees.maker, slippage_bps=s.backtest.slippage_bps)
+    prof = s.backtest.cost_profiles.get(costs)
+    if prof is None:
+        raise SystemExit(f"Perfil de costes desconocido: {costs}. Disponibles: futures, {', '.join(s.backtest.cost_profiles)}")
+    print(f"Costes {costs.upper()}: maker {prof['maker_fee']:.2%} taker {prof['taker_fee']:.2%} · apertura "
+          f"{prof.get('open_fee', 0):.2%} · rollover {prof.get('rollover_fee_per_4h', 0):.2%}/4 h · slippage "
+          f"{prof.get('slippage_bps', s.backtest.slippage_bps)} pb · sin funding")
+    return BacktestConfig(**base, taker_fee=prof["taker_fee"], maker_fee=prof["maker_fee"],
+                          slippage_bps=prof.get("slippage_bps", s.backtest.slippage_bps),
+                          open_fee=prof.get("open_fee", 0.0), rollover_fee_per_4h=prof.get("rollover_fee_per_4h", 0.0))
 
 
 def _filter_variants(arg: str, base):
@@ -139,7 +148,7 @@ async def cmd_check(s: Settings) -> None:
 
 async def cmd_download(s: Settings, since: str | None) -> None:
     from .data.downloader import download_candles, download_funding
-    from .exchange.rest import KrakenFuturesRest
+    from .exchange.rest import KrakenAPIError, KrakenFuturesRest
 
     data_dir = Path(s.backtest.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -152,18 +161,29 @@ async def cmd_download(s: Settings, since: str | None) -> None:
         for tick_type in ("trade", "mark"):
             df = await download_candles(rest, data_dir, s.symbol, tick_type, "1h", since_ts)
             print(f"{tick_type}: {len(df)} velas ({df.index.min()} -> {df.index.max()})")
-        f = await download_funding(rest, data_dir, s.symbol)
-        print(f"funding: {len(f)} registros ({f.index.min()} -> {f.index.max()})")
+        try:
+            f = await download_funding(rest, data_dir, s.symbol)
+            print(f"funding: {len(f)} registros ({f.index.min()} -> {f.index.max()})")
+        except KrakenAPIError as exc:
+            print(f"AVISO: no se pudo descargar el funding histórico ({exc}). "
+                  "Las velas sí se guardaron; el backtest se hará sin funding.")
 
 
-def cmd_backtest(s: Settings, funding_filter: str, start: str | None, end: str | None, out: str) -> None:
+def cmd_backtest(s: Settings, funding_filter: str, start: str | None, end: str | None, out: str,
+                 costs: str = "futures") -> None:
     from .backtest.engine import run_backtest
     from .backtest.metrics import compute_metrics, format_metrics
     from .backtest.regimes import classify_regimes, metrics_by_regime
     from .strategy.donchian_atr import StrategyParams
 
     candles, mark, funding = _load_market(s)
-    cfg = _bt_config(s)
+    cfg = _bt_config(s, costs)
+    if costs != "futures":
+        out = str(Path(out) / costs)   # resultados aparte: no pisan los de futuros
+        funding = None          # el margen de spot no paga funding (paga rollover, ya incluido)
+        if funding_filter != "off":
+            print("Perfil sin funding: el filtro de funding no aplica; se ejecuta solo sin filtro")
+            funding_filter = "off"
     base = StrategyParams.from_cfg(s.strategy)
     regimes = classify_regimes(candles)
     st = pd.Timestamp(start, tz="UTC") if start else None
@@ -182,13 +202,19 @@ def cmd_backtest(s: Settings, funding_filter: str, start: str | None, end: str |
     print(f"\nCSV guardados en {out}/")
 
 
-def cmd_walkforward(s: Settings, funding_filter: str, holdout: bool, out: str) -> None:
+def cmd_walkforward(s: Settings, funding_filter: str, holdout: bool, out: str, costs: str = "futures") -> None:
     from .backtest.metrics import format_metrics
     from .backtest.walkforward import evaluate_holdout, walk_forward
     from .strategy.donchian_atr import StrategyParams
 
     candles, mark, funding = _load_market(s)
-    cfg = _bt_config(s)
+    cfg = _bt_config(s, costs)
+    if costs != "futures":
+        out = str(Path(out) / costs)   # resultados aparte: no pisan los de futuros
+        funding = None          # el margen de spot no paga funding (paga rollover, ya incluido)
+        if funding_filter != "off":
+            print("Perfil sin funding: el filtro de funding no aplica; se ejecuta solo sin filtro")
+            funding_filter = "off"
     base = StrategyParams.from_cfg(s.strategy)
     Path(out).mkdir(parents=True, exist_ok=True)
     for name, params in _filter_variants(funding_filter, base):
@@ -282,11 +308,12 @@ def confirm_live(s: Settings, flag: bool) -> None:
     print(f" MODO REAL: dinero real en {s.symbol}. Riesgo {s.risk.risk_per_trade:.1%}/operación, "
           f"pérdida diaria máx {s.risk.max_daily_loss:.1%}, apalancamiento máx {s.risk.max_leverage}x")
     print("=" * 70)
+    # Confirmación explícita por entorno/.env: necesaria para arranques desatendidos
+    # (reinicio automático, Docker, systemd), donde nadie puede escribir la frase.
+    if os.getenv("XRPBOT_LIVE_CONFIRM", "").strip() == phrase:
+        print("Confirmación de live recibida por XRPBOT_LIVE_CONFIRM")
+        return
     if not sys.stdin.isatty():
-        # Docker/systemd sin terminal: la confirmación debe venir explícita en el entorno
-        if os.getenv("XRPBOT_LIVE_CONFIRM", "").strip() == phrase:
-            print("Confirmación de live recibida por XRPBOT_LIVE_CONFIRM")
-            return
         raise SystemExit(f"Sin terminal: define XRPBOT_LIVE_CONFIRM='{phrase}' para confirmar el modo real")
     if input(f"Escribe exactamente '{phrase}' para continuar: ").strip() != phrase:
         raise SystemExit("Confirmación incorrecta: abortado")
@@ -307,6 +334,7 @@ def main(argv: list[str] | None = None) -> None:
         p = sub.add_parser(name)
         p.add_argument("--funding-filter", choices=["on", "off", "both"], default="both")
         p.add_argument("--out", default="reports")
+        p.add_argument("--costs", default="futures", help="perfil de costes: futures (por defecto) o margin")
         if name == "backtest":
             p.add_argument("--start")
             p.add_argument("--end")
@@ -333,9 +361,9 @@ def main(argv: list[str] | None = None) -> None:
     elif args.cmd == "download":
         asyncio.run(cmd_download(s, args.since))
     elif args.cmd == "backtest":
-        cmd_backtest(s, args.funding_filter, args.start, args.end, args.out)
+        cmd_backtest(s, args.funding_filter, args.start, args.end, args.out, args.costs)
     elif args.cmd == "walkforward":
-        cmd_walkforward(s, args.funding_filter, args.holdout, args.out)
+        cmd_walkforward(s, args.funding_filter, args.holdout, args.out, args.costs)
     elif args.cmd == "kill":
         asyncio.run(cmd_kill(s))
     elif args.cmd == "rearm":

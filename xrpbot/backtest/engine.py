@@ -14,6 +14,9 @@ Ejecución conservadora:
 - Stop disparado por velas de mark price (como en vivo) si están disponibles;
   la ejecución es a mercado: precio del stop o apertura si hay gap, con slippage.
 
+Margen de Kraken spot (perfil de costes "margin"): comisión de apertura al entrar y
+rollover cada 4 horas completas sobre el nocional; sin funding.
+
 Funding (perpetuo): al final de cada hora con posición abierta se aplica
     pago = -signo * tamaño * contract_size * mark_cierre * funding_relativo
 (los largos pagan si el funding es positivo). SUPUESTO A VERIFICAR: que
@@ -50,6 +53,10 @@ class BacktestConfig:
     slippage_bps: float = 5.0
     tp_post_only: bool = True
     min_liq_distance_multiple: float = 3.0
+    # Margen de Kraken spot (no futuros): comisión de apertura y de rollover cada 4 h
+    # sobre el nocional. En futuros son 0 y en su lugar se aplica el funding.
+    open_fee: float = 0.0
+    rollover_fee_per_4h: float = 0.0
 
 
 @dataclass
@@ -183,7 +190,7 @@ def run_backtest(candles: pd.DataFrame, params: StrategyParams, cfg: BacktestCon
                     else:
                         stop = sig.stop_price
                         tp = take_profit_price(side, entry_px, stop, params.take_profit_r)
-                        fee = sz.size * cs * entry_px * cfg.taker_fee
+                        fee = sz.size * cs * entry_px * (cfg.taker_fee + cfg.open_fee)
                         cash -= fee
                         pos = Trade(side=side.value, signal_time=sig.time, entry_time=t,
                                     entry_price=entry_px, size=sz.size, initial_stop=stop,
@@ -211,6 +218,12 @@ def run_backtest(candles: pd.DataFrame, params: StrategyParams, cfg: BacktestCon
             pay = -side.sign * pos.size * cs * tc[i] * fund_rate[i]
             pos.funding += pay
             cash += pay
+
+        # 3b) Rollover del margen: cada 4 horas completas con la posición abierta.
+        if pos is not None and cfg.rollover_fee_per_4h and pos.bars_held % 4 == 0:
+            roll = pos.size * cs * tc[i] * cfg.rollover_fee_per_4h
+            pos.fees += roll
+            cash -= roll
 
         # 4) Equity marcada a mercado y parada diaria.
         unreal = Side(pos.side).sign * pos.size * cs * (c[i] - pos.entry_price) if pos else 0.0

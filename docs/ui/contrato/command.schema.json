@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "xrpbot/ui/command.schema.json",
+  "title": "Comando de la interfaz al bot (PROPUESTA v1)",
+  "description": "Fila de la tabla commands en state/commands-{modo}.sqlite. La interfaz la inserta en estado 'pending'; SOLO el bot cambia status/result/processed_at.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "params",
+    "created_at",
+    "expires_at",
+    "requested_by",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Único. Reenviar el mismo id no crea otro comando (idempotencia)."
+    },
+    "type": {
+      "enum": [
+        "pause",
+        "resume",
+        "close_position",
+        "kill",
+        "rearm",
+        "reduce_param"
+      ]
+    },
+    "params": {
+      "type": "object"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "source_ip": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "expired",
+        "done",
+        "failed"
+      ]
+    },
+    "result": {
+      "type": "string"
+    },
+    "processed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "reduce_param"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "required": [
+              "name",
+              "value"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "enum": [
+                  "risk.risk_per_trade",
+                  "risk.max_daily_loss",
+                  "risk.max_leverage",
+                  "circuit_breaker.max_spread_bps",
+                  "circuit_breaker.max_data_age_s",
+                  "circuit_breaker.max_candle_delay_bars",
+                  "circuit_breaker.max_atr_ratio",
+                  "circuit_breaker.max_mark_last_divergence_bps",
+                  "circuit_breaker.min_book_depth_multiple"
+                ]
+              },
+              "value": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "maxProperties": 0
+          }
+        }
+      }
+    }
+  ]
+}

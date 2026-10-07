@@ -1,0 +1,133 @@
+/* Sistema de diseño xrpbot-ui · tokens
+ * Fuente única de colores, tipografía, espaciado y radios.
+ * Tema oscuro por defecto; el claro se activa con <html data-theme="light">.
+ * Contrastes verificados (WCAG): todo el texto >= 4.5:1 sobre bg, surface-1 y surface-2.
+ * Colores de gráficos validados con validate_palette.js (CVD y visión normal), ver docs/ui/sistema-diseno.md.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Superficies */
+  --bg:          #121211;
+  --surface-1:   #1a1a19;   /* tarjetas y fondo de gráficos (superficie validada) */
+  --surface-2:   #232321;   /* cabeceras de tabla, campos */
+  --surface-3:   #2c2c29;   /* hover */
+  --border:      #383835;
+  --border-strong:#55554f;
+  --focus:       #6da7ec;
+
+  /* Texto */
+  --text:        #f2f1ec;   /* 15.4:1 */
+  --text-2:      #c3c2b7;   /*  9.7:1 */
+  --text-muted:  #9a9990;   /*  6.1:1 */
+
+  /* Estado (reservados: SOLO significan estado; siempre con icono + texto) */
+  --good:        #0ca30c;  --good-text:    #4cc94c;
+  --warning:     #fab219;  --warning-text: #fab219;
+  --serious:     #ec835a;  --serious-text: #f0956f;
+  --critical:    #d03b3b;  --critical-text:#f07a7a;
+  --info:        #3987e5;  --info-text:    #6da7ec;
+  --good-bg:     rgba(12,163,12,.14);
+  --warning-bg:  rgba(250,178,25,.14);
+  --serious-bg:  rgba(236,131,90,.14);
+  --critical-bg: rgba(208,59,59,.16);
+  --info-bg:     rgba(57,135,229,.14);
+
+  /* Modo de ejecución */
+  --mode-sim:      #3987e5;
+  --mode-live:     #fab219;    /* franja + borde de 4px; texto encima: --mode-live-ink (9.5:1) */
+  --mode-live-ink: #1a1a19;
+
+  /* Gráficos (validados, ver documento) */
+  --chart-up:        #3987e5;  /* vela alcista: azul, HUECA */
+  --chart-down:      #d95926;  /* vela bajista: naranja, RELLENA */
+  --chart-ind-1:     #199e70;  /* indicador principal (p. ej. canal de entrada) */
+  --chart-line:      #3987e5;  /* serie única (curva de capital, ATR) */
+  --chart-drawdown:  #d95926;
+  --chart-grid:      #2a2a28;
+  --chart-axis:      #9a9990;
+  --level-entry:     #c3c2b7;  /* línea de entrada: neutra discontinua */
+  --level-tp:        #0ca30c;  /* objetivo, con etiqueta "TP" */
+  --level-stop:      #ec835a;  /* stop, con etiqueta "STOP" */
+  --level-liq:       #d03b3b;  /* liquidación, con etiqueta "LIQ" y trazo punteado */
+
+  /* Tipografía: fuentes del sistema, sin descargas */
+  --font-ui:   system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "Liberation Mono", monospace;
+  --fs-xs: 0.75rem;   /* 12 */
+  --fs-sm: 0.875rem;  /* 14 */
+  --fs-md: 1rem;      /* 16 */
+  --fs-lg: 1.25rem;   /* 20 */
+  --fs-xl: 1.5rem;    /* 24 */
+  --fs-2xl: 2rem;     /* 32: cifra principal de una tarjeta */
+  --lh-tight: 1.2;
+  --lh: 1.5;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 650;
+
+  /* Espaciado (base 4px) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+
+  /* Forma y profundidad */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-pill: 999px;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.25);
+
+  /* Movimiento: mínimo y siempre desactivable */
+  --t-fast: 120ms;
+
+  /* Datos desfasados */
+  --stale-opacity: .55;
+
+  /* Layout */
+  --nav-w: 232px;
+  --header-h: 56px;
+  --bottom-nav-h: 60px;
+  --touch: 44px;              /* tamaño mínimo de objetivo táctil */
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:          #f5f5f3;
+  --surface-1:   #fcfcfb;
+  --surface-2:   #f0efec;
+  --surface-3:   #e7e6e1;
+  --border:      #dcdbd5;
+  --border-strong:#b9b8b0;
+  --focus:       #1c5cab;
+
+  --text:        #0b0b0b;   /* 19.2:1 */
+  --text-2:      #52514e;   /*  7.7:1 */
+  --text-muted:  #66655f;   /*  5.7:1 */
+
+  --good-text:    #006300;
+  --warning-text: #7a5200;
+  --serious-text: #9c4119;
+  --critical-text:#b02a2a;
+  --info:         #2a78d6;  --info-text: #1c5cab;
+  --good-bg:     rgba(12,163,12,.10);
+  --warning-bg:  rgba(250,178,25,.18);
+  --serious-bg:  rgba(236,131,90,.14);
+  --critical-bg: rgba(208,59,59,.10);
+  --info-bg:     rgba(42,120,214,.10);
+
+  --mode-sim:    #2a78d6;
+
+  --chart-up:        #2a78d6;
+  --chart-down:      #eb6834;
+  --chart-ind-1:     #1baf7a;   /* contraste 2.7:1: se acompaña SIEMPRE de etiqueta en el eje */
+  --chart-line:      #2a78d6;
+  --chart-drawdown:  #eb6834;
+  --chart-grid:      #ebeae6;
+  --chart-axis:      #66655f;
+  --level-entry:     #52514e;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 0ms; }
+}

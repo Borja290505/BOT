@@ -1,0 +1,120 @@
+{% from "_macros.html" import tip with context %}
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="csrf-token" content="{{ csrf }}">
+<title>{% block title %}{{ (pages | selectattr(0, "equalto", page) | first or ["", "", "Detalle"])[2] }}{% endblock %} · xrpbot {{ mode | upper }}</title>
+<script src="/static/js/theme.js"></script>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/components.css">
+<link rel="stylesheet" href="/static/css/app.css">
+<link rel="icon" href="data:,">
+</head>
+<body data-page="{{ page }}" data-read-only="{{ 'true' if read_only else 'false' }}" data-source="{{ caps.source }}"
+      data-control-minutes="{{ control_minutes }}">
+<a class="skip" href="#main">Saltar al contenido</a>
+<div class="app" id="app" data-mode="{{ mode }}">
+  <header class="mode-band" id="mode-band">
+    <span class="badge {{ 'badge-live' if mode == 'live' else 'badge-sim' }}" id="mode-badge">{{ '▲ LIVE' if mode == 'live' else '◆ SIM' }}</span>
+    <strong class="mode-text" id="mode-text">{{ 'DINERO REAL' if mode == 'live' else 'Simulado · sin dinero real' }}</strong>
+    <span class="badge badge-pilot" id="pilot-badge" {% if not (mode == 'live' and pilot.active) %}hidden{% endif %}>PILOTO</span>
+    <span class="status status-neutral" id="bot-status" role="status" aria-live="polite"><span class="icon" aria-hidden="true">◌</span><span class="txt">Cargando…</span></span>
+    {% if caps.source == 'demo' %}
+    <label class="demo-pick hide-sm"><span class="sr-only">Escenario de demostración</span>
+      <select id="scenario" class="input input-sm" aria-label="Escenario de demostración">
+        {% for k, v in caps.scenarios.items() %}<option value="{{ k }}" {% if k == caps.scenario %}selected{% endif %}>DEMO · {{ v }}</option>{% endfor %}
+      </select></label>
+    {% endif %}
+    <span class="spacer"></span>
+    <span class="clock num" id="clock" aria-label="Hora actual"></span>
+    <button class="btn btn-ghost btn-sm" type="button" id="tz-toggle" title="Cambiar zona horaria de las fechas">UTC</button>
+    <button class="btn btn-ghost btn-sm" type="button" id="theme-toggle" aria-label="Cambiar tema">◐</button>
+    {% if not read_only and caps.control %}
+    <button class="lock" type="button" id="lock-btn" data-unlocked="false" aria-live="polite">🔒 <span class="hide-sm">Solo lectura ·&nbsp;</span>Desbloquear</button>
+    {% else %}
+    <span class="lock" aria-disabled="true">🔒 <span class="hide-sm">Solo lectura</span></span>
+    {% endif %}
+    <button class="btn btn-ghost btn-sm" type="button" id="logout-btn" title="Cerrar sesión ({{ user }})">⎋<span class="sr-only"> Cerrar sesión</span></button>
+  </header>
+
+  <div class="conn-banner" id="conn-banner" hidden role="alert"></div>
+
+  <div class="layout">
+    <nav class="sidenav" aria-label="Secciones">
+      {% for key, href, label, icon in pages %}
+      <a href="{{ href }}" {% if key == page or (page == 'operacion' and key == 'historial') %}aria-current="page"{% endif %}><span aria-hidden="true" class="nav-ico">{{ icon }}</span>{{ label }}</a>
+      {% endfor %}
+      <div class="nav-foot muted">
+        <div>v{{ version }} · {{ caps.source }}</div>
+        {% if caps.source == 'demo' %}<div class="demo-flag">DATOS SIMULADOS</div>{% endif %}
+      </div>
+    </nav>
+    <main class="main" id="main" tabindex="-1">
+      {% if caps.source == 'demo' %}
+      <div class="alert alert-info demo-note"><span class="icon">ℹ</span><div><strong>Modo demostración</strong>Todos los datos son simulados. Cambia el escenario arriba para ver cada caso límite.</div></div>
+      {% elif caps.note %}
+      <div class="alert alert-warning"><span class="icon">⚠</span><div><strong>Integración parcial con el bot</strong>{{ caps.note }}</div></div>
+      {% endif %}
+      <div id="cmd-feedback" aria-live="polite"></div>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <nav class="bottomnav" aria-label="Secciones principales">
+    <a href="/" {% if page == 'resumen' %}aria-current="page"{% endif %}><span aria-hidden="true">◉</span>Resumen</a>
+    <a href="/posicion" {% if page == 'posicion' %}aria-current="page"{% endif %}><span aria-hidden="true">◧</span>Posición</a>
+    <a href="/riesgo" {% if page == 'riesgo' %}aria-current="page"{% endif %}><span aria-hidden="true">◔</span>Riesgo</a>
+    <a href="#" id="more-btn" aria-haspopup="dialog"><span aria-hidden="true">⋯</span>Más</a>
+  </nav>
+</div>
+
+<dialog class="confirm sheet" id="more-dialog" aria-label="Más secciones">
+  <div class="body">
+    {% for key, href, label, icon in pages %}<a class="btn sheet-link" href="{{ href }}"><span aria-hidden="true">{{ icon }}</span> {{ label }}</a>{% endfor %}
+  </div>
+  <div class="actions"><button class="btn" type="button" data-close>Cerrar</button></div>
+</dialog>
+
+<dialog class="confirm" id="unlock-dialog" aria-labelledby="unlock-title">
+  <form method="dialog" id="unlock-form">
+    <div class="live-strip live-only">▲ LIVE · DINERO REAL</div>
+    <div class="body">
+      <h3 id="unlock-title">Desbloquear el modo control</h3>
+      <p class="text-2">Durante <strong>{{ control_minutes }} minutos</strong> podrás pausar, cerrar la posición, rearmar o activar el kill switch. Cada acción pedirá además su propia confirmación y quedará en la auditoría.</p>
+      <div class="field"><label for="unlock-pw">Tu contraseña</label>
+        <input class="input" type="password" id="unlock-pw" autocomplete="current-password" required></div>
+      <p class="error" id="unlock-error" hidden></p>
+    </div>
+    <div class="actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn btn-primary" type="submit">Desbloquear</button></div>
+  </form>
+</dialog>
+
+<dialog class="confirm" id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog" id="confirm-form">
+    <div class="live-strip live-only">▲ LIVE · DINERO REAL</div>
+    <div class="body">
+      <div class="steps" id="confirm-steps" hidden></div>
+      <h3 id="confirm-title"></h3>
+      <div class="text-2" id="confirm-body"></div>
+      <div class="field" id="confirm-word-field" hidden>
+        <label for="confirm-word">Escribe <strong id="confirm-word-label"></strong> para confirmar</label>
+        <input class="input" id="confirm-word" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </div>
+    </div>
+    <div class="actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn" type="submit" id="confirm-ok"></button></div>
+  </form>
+</dialog>
+
+<div class="tip-pop" id="tip-pop" role="tooltip" hidden></div>
+<script type="application/json" id="initial-state">{{ initial_state | safe }}</script>
+<script type="application/json" id="glossary-data">{{ glossary | tojson }}</script>
+<script type="application/json" id="reducible-data">{{ reducible | tojson }}</script>
+<script src="/static/vendor/lightweight-charts/lightweight-charts.standalone.production.js" defer></script>
+<script src="/static/js/core.js" defer></script>
+<script src="/static/js/charts.js" defer></script>
+<script src="/static/js/pages.js" defer></script>
+</body>
+</html>

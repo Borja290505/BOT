@@ -89,7 +89,10 @@ class DailyLossGuard:
             start = float(start_raw) if start_raw else None
             loss = (start - equity) / start if start else 0.0
             return GuardStatus(True, False, start, loss, self.halt_reason)
-        if self.store.get(self.K_DAY) != day or start_raw is None:
+        # referencia nueva al cambiar de día, si no hay referencia o si era <= 0
+        # (p. ej. el bot arrancó con la cuenta vacía y luego se transfirieron fondos:
+        # con referencia 0 el límite diario quedaría desactivado)
+        if self.store.get(self.K_DAY) != day or start_raw is None or float(start_raw) <= 0:
             self.store.set(self.K_DAY, day)
             self.store.set(self.K_START, repr(equity))
             start_raw = repr(equity)

@@ -166,3 +166,17 @@ def test_costs_make_martingale_negative(spec):
         t = run_backtest(path_candles(24 * 365, seed=seed), P, cfg(spec)).trades
         rs.append(t["r_multiple"])
     assert pd.concat(rs).mean() < 0
+
+
+def test_margin_costs_open_fee_and_rollover(spec):
+    """Perfil de margen: comisión de apertura y rollover cada 4 h completas sobre el nocional."""
+    df = scenario([(0.52, 0.521, 0.519, 0.52)] * 9)   # 9 velas con la posición abierta, sin salida
+    base = run_backtest(df, P, cfg(spec, taker_fee=0.004, maker_fee=0.0025)).trades.iloc[0]
+    m = run_backtest(df, P, cfg(spec, taker_fee=0.004, maker_fee=0.0025, open_fee=0.0002,
+                                rollover_fee_per_4h=0.0002)).trades.iloc[0]
+    assert m["size"] == base["size"]
+    extra = m["fees"] - base["fees"]
+    size = m["size"]
+    expected = size * m["entry_price"] * 0.0002 + 2 * size * 0.52 * 0.0002   # apertura + 2 rollovers (4 h y 8 h)
+    assert extra == pytest.approx(expected, rel=1e-6)
+    assert m["funding"] == 0

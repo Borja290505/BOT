@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip with context %}
+{% block content %}
+<h1>Historial de operaciones</h1>
+<form class="card filters" id="hist-filters" aria-label="Filtros">
+  <div class="field"><label for="f-since">Desde</label><input class="input" type="date" id="f-since" name="since"></div>
+  <div class="field"><label for="f-until">Hasta</label><input class="input" type="date" id="f-until" name="until"></div>
+  <div class="field"><label for="f-side">Lado</label><select class="input" id="f-side" name="side"><option value="">Todos</option><option value="long">Largo</option><option value="short">Corto</option></select></div>
+  <div class="field"><label for="f-result">Resultado</label><select class="input" id="f-result" name="result"><option value="">Todos</option><option value="win">Ganadoras</option><option value="loss">Perdedoras</option></select></div>
+  <div class="field"><label for="f-reason">Motivo de salida</label><select class="input" id="f-reason" name="reason"><option value="">Todos</option><option value="stop">Stop</option><option value="stop_gap">Stop (hueco)</option><option value="take_profit">Take profit</option><option value="daily_loss_halt">Parada diaria</option><option value="cierre_manual">Cierre manual</option><option value="kill_switch">Kill switch</option><option value="end_of_data">Fin de datos</option></select></div>
+  <div class="field actions-inline"><button class="btn" type="reset">Limpiar</button><a class="btn" id="csv-link" href="/api/trades.csv" download>⤓ CSV</a></div>
+</form>
+<section class="card">
+  <div class="card-head"><h2>Operaciones</h2>{{ tip('r_multiple') }}<span class="spacer"></span><span class="muted small num" id="hist-summary"></span></div>
+  <div id="hist-body"><span class="skeleton"></span></div>
+  <div class="pager" id="hist-pager"></div>
+</section>
+{% endblock %}

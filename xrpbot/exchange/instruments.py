@@ -30,7 +30,11 @@ def parse_instrument(instruments: list[dict], symbol: str) -> InstrumentSpec:
         raise InstrumentNotAvailable(f"{symbol} existe pero no es negociable (tradeable=false)")
 
     tick = float(raw["tickSize"])
-    precision = int(raw.get("contractValuePrecision", 0))
+    # Si Kraken no informa la precisión (ocurre en PF_XRPUSD), se asumen contratos
+    # enteros: es lo más prudente (un tamaño entero siempre es un múltiplo válido
+    # si el exchange admitiera decimales; si exigiera más, rechazaría la orden).
+    raw_precision = raw.get("contractValuePrecision")
+    precision = int(raw_precision) if raw_precision is not None else 0
     step = 10.0 ** (-precision)
     levels = raw.get("marginLevels") or []
     mm = float(levels[0]["maintenanceMargin"]) if levels else None

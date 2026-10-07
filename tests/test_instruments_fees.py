@@ -60,3 +60,9 @@ def test_fee_sanity_check():
         select_fees([{"uid": "x", "tiers": [{"makerFee": 2, "takerFee": 5, "usdVolume": 0}]}], "x")
     with pytest.raises(FeeParseError):
         select_fees(SCHEDULES, "otro")
+
+
+def test_missing_or_null_precision_means_integer_contracts():
+    base = {k: v for k, v in INSTRUMENTS[1].items() if k != "contractValuePrecision"}
+    assert parse_instrument([base], "PF_XRPUSD").size_step == 1.0
+    assert parse_instrument([dict(base, contractValuePrecision=None)], "PF_XRPUSD").size_step == 1.0

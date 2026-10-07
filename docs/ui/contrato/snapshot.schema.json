@@ -1,0 +1,737 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "xrpbot/ui/snapshot.schema.json",
+  "title": "Instantánea de estado que el bot publica para la interfaz (PROPUESTA v1)",
+  "description": "El bot la escribe cada 2 s en la tabla ui_status de state/xrpbot-{modo}.sqlite. Importes en USD, precios en USD por XRP, fracciones (0.01 = 1 %), fechas ISO 8601 en UTC.",
+  "type": "object",
+  "required": [
+    "schema",
+    "generated_at",
+    "symbol",
+    "tick_size",
+    "mode",
+    "pilot",
+    "bot",
+    "market",
+    "account",
+    "position",
+    "orders",
+    "risk",
+    "breakers",
+    "health",
+    "last_event"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "enum": [
+        "bot",
+        "demo"
+      ]
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "tick_size": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "mode": {
+      "enum": [
+        "sim",
+        "live"
+      ]
+    },
+    "pilot": {
+      "type": "object",
+      "required": [
+        "active",
+        "max_capital_usd"
+      ],
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "max_capital_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "bot": {
+      "type": "object",
+      "required": [
+        "state",
+        "reason",
+        "heartbeat_at",
+        "version",
+        "commit",
+        "started_at"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "starting",
+            "active",
+            "paused",
+            "halted",
+            "frozen",
+            "reconnecting",
+            "unknown"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "heartbeat_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "started_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "strategy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "effective_state": {
+          "description": "Lo añade la interfaz (no el bot): 'down' si el latido tiene > 15 s"
+        }
+      }
+    },
+    "market": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "mark",
+        "last",
+        "bid",
+        "ask",
+        "spread_bps",
+        "funding_rate_hourly",
+        "at"
+      ],
+      "properties": {
+        "mark": {
+          "type": "number"
+        },
+        "last": {
+          "type": "number"
+        },
+        "bid": {
+          "type": "number"
+        },
+        "ask": {
+          "type": "number"
+        },
+        "spread_bps": {
+          "type": "number"
+        },
+        "funding_rate_hourly": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "account": {
+      "type": "object",
+      "required": [
+        "equity_usd",
+        "equity_at",
+        "day_start_equity_usd",
+        "pnl_day_usd",
+        "pnl_total_usd",
+        "account_max_leverage"
+      ],
+      "properties": {
+        "equity_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "equity_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "day_start_equity_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pnl_day_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pnl_total_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "initial_capital_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "account_max_leverage": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "position": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "trade_id",
+            "side",
+            "size",
+            "entry_price",
+            "mark_price",
+            "notional_usd",
+            "effective_leverage",
+            "unrealized_pnl_usd",
+            "stop_price",
+            "tp_price",
+            "liquidation_price",
+            "dist_stop_pct",
+            "dist_liq_pct",
+            "funding_accrued_usd",
+            "opened_at"
+          ],
+          "properties": {
+            "trade_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "unknown": {
+              "type": "boolean",
+              "description": "true si la posición no la abrió el bot (discrepancia)"
+            },
+            "side": {
+              "enum": [
+                "long",
+                "short"
+              ]
+            },
+            "size": {
+              "type": "number"
+            },
+            "entry_price": {
+              "type": "number"
+            },
+            "mark_price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "notional_usd": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "effective_leverage": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "unrealized_pnl_usd": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "r_multiple": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "risk_usd": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "stop_price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tp_price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "liquidation_price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dist_stop_pct": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dist_tp_pct": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dist_liq_pct": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "funding_accrued_usd": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "opened_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            }
+          }
+        }
+      ]
+    },
+    "orders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "type",
+          "side",
+          "size",
+          "price",
+          "reduce_only",
+          "cli_ord_id",
+          "status"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "sl",
+              "tp",
+              "entry",
+              "flatten",
+              "emergency_sl"
+            ]
+          },
+          "type": {
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "size": {
+            "type": "number"
+          },
+          "price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "trigger": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reduce_only": {
+            "type": "boolean"
+          },
+          "cli_ord_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "required": [
+        "daily_loss_used_usd",
+        "daily_loss_limit_usd",
+        "daily_loss_fraction_of_limit",
+        "reset_at",
+        "effective",
+        "entries_blocked",
+        "block_reasons"
+      ],
+      "properties": {
+        "daily_loss_used_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "daily_loss_limit_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "daily_loss_fraction_of_limit": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "reset_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective": {
+          "type": "object",
+          "required": [
+            "risk_per_trade",
+            "max_daily_loss",
+            "max_leverage"
+          ],
+          "properties": {
+            "risk_per_trade": {
+              "type": "number"
+            },
+            "max_daily_loss": {
+              "type": "number"
+            },
+            "max_leverage": {
+              "type": "number"
+            }
+          }
+        },
+        "entries_blocked": {
+          "type": "boolean"
+        },
+        "block_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "breakers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "value",
+          "threshold",
+          "unit",
+          "comparator",
+          "state",
+          "value_text",
+          "threshold_text",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "threshold": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "comparator": {
+            "enum": [
+              "<=",
+              ">="
+            ]
+          },
+          "state": {
+            "enum": [
+              "ok",
+              "blocking",
+              "no_data",
+              "disabled"
+            ]
+          },
+          "param": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value_text": {
+            "type": "string"
+          },
+          "threshold_text": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "health": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "ws",
+            "rest",
+            "rate_limit",
+            "clock_offset_s",
+            "ticker_at",
+            "last_candle_at",
+            "last_reconcile"
+          ],
+          "properties": {
+            "ws": {
+              "type": "object",
+              "required": [
+                "connected",
+                "last_msg_at",
+                "reconnects_today"
+              ],
+              "properties": {
+                "connected": {
+                  "type": "boolean"
+                },
+                "last_msg_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "reconnects_today": {
+                  "type": "integer"
+                }
+              }
+            },
+            "rest": {
+              "type": "object",
+              "properties": {
+                "latency_p50_ms": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "latency_p95_ms": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "rate_limit": {
+              "type": "object",
+              "required": [
+                "used",
+                "capacity",
+                "window_s"
+              ],
+              "properties": {
+                "used": {
+                  "type": "number"
+                },
+                "capacity": {
+                  "type": "number"
+                },
+                "window_s": {
+                  "type": "number"
+                }
+              }
+            },
+            "clock_offset_s": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ticker_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "last_candle_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "last_reconcile": {
+              "type": "object",
+              "required": [
+                "at",
+                "result",
+                "notes"
+              ],
+              "properties": {
+                "at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "result": {
+                  "enum": [
+                    "ok",
+                    "fixed",
+                    "frozen"
+                  ]
+                },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "last_event": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "ts",
+            "level",
+            "kind",
+            "message"
+          ],
+          "properties": {
+            "ts": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "level": {
+              "enum": [
+                "debug",
+                "info",
+                "warning",
+                "error",
+                "critical"
+              ]
+            },
+            "kind": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip with context %}
+{% block content %}
+<h1>Mercado</h1>
+<section class="card">
+  <div class="card-head wrap">
+    <h2 id="mk-title">XRP/USD · PF_XRPUSD · 1 h</h2>
+    <span class="spacer"></span>
+    <dl class="inline-kv num" data-stale-group="market">
+      <div><dt>Mark {{ tip('mark_price') }}</dt><dd id="mk-mark">—</dd></div>
+      <div><dt>Último {{ tip('last_price') }}</dt><dd id="mk-last">—</dd></div>
+      <div><dt>Spread {{ tip('spread') }}</dt><dd id="mk-spread">—</dd></div>
+      <div><dt>Funding {{ tip('funding') }}</dt><dd id="mk-funding">—</dd></div>
+    </dl>
+    <span class="age" data-age-of="market"></span>
+  </div>
+  <div class="legend" id="mk-legend" aria-label="Indicadores visibles"></div>
+  <div class="chart chart-lg" id="chart-price" role="img" aria-label="Gráfico de velas de XRP/USD con indicadores y niveles"></div>
+  <div class="chart chart-xs" id="chart-atr" role="img" aria-label="ATR en panel inferior"></div>
+  <div class="row-between">
+    <p class="muted small" id="mk-note">Velas: alcista azul hueca · bajista naranja rellena. Los niveles llevan etiqueta en el eje.</p>
+    <button class="btn btn-ghost btn-sm" type="button" data-table-toggle="candles">Ver datos</button>
+  </div>
+  <div class="table-wrap" id="candles-table" hidden></div>
+</section>
+<section class="card">
+  <div class="card-head"><h2>Niveles de la posición</h2></div>
+  <div id="mk-levels" class="muted">Sin posición abierta.</div>
+</section>
+{% endblock %}

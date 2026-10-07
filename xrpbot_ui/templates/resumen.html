@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tip, controlbar with context %}
+{% block content %}
+<h1>Resumen</h1>
+<div class="grid grid-4">
+  <section class="card stat" aria-labelledby="h-state">
+    <div class="label" id="h-state">Estado del bot</div>
+    <div class="value-status" id="sum-state"><span class="skeleton" style="width:70%"></span></div>
+    <div class="sub" id="sum-reason"></div>
+    <div class="sub age" id="sum-heartbeat"></div>
+  </section>
+  <section class="card stat">
+    <div class="label">P&amp;L hoy <span class="muted">(desde 00:00 UTC)</span></div>
+    <div class="value" id="sum-pnl-day" data-stale-group="account"><span class="skeleton"></span></div>
+    <div class="sub" id="sum-pnl-day-pct"></div>
+  </section>
+  <section class="card stat">
+    <div class="label">P&amp;L total</div>
+    <div class="value" id="sum-pnl-total" data-stale-group="account"><span class="skeleton"></span></div>
+    <div class="sub" id="sum-pnl-total-sub"></div>
+  </section>
+  <section class="card stat">
+    <div class="label">Capital (equity)</div>
+    <div class="value" id="sum-equity" data-stale-group="account"><span class="skeleton"></span></div>
+    <div class="sub age" data-age-of="account"></div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Curva de capital</h2>{{ tip('drawdown') }}<span class="spacer"></span>
+    <div class="seg" role="group" aria-label="Rango">
+      <button class="btn btn-sm" data-range="7" type="button">7 d</button>
+      <button class="btn btn-sm" data-range="30" type="button" aria-pressed="true">30 d</button>
+      <button class="btn btn-sm" data-range="0" type="button">Todo</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" type="button" data-table-toggle="equity">Ver datos</button>
+  </div>
+  <div class="chart chart-sm" id="chart-equity" role="img" aria-label="Curva de capital"></div>
+  <div class="chart chart-xs" id="chart-dd" role="img" aria-label="Drawdown"></div>
+  <p class="muted small" id="equity-note"></p>
+  <div class="table-wrap" id="equity-table" hidden></div>
+</section>
+
+<div class="grid grid-2">
+  <section class="card" aria-labelledby="h-pos">
+    <div class="card-head"><h2 id="h-pos">Posición actual</h2><span class="spacer"></span><a href="/posicion" class="small">Ver posición →</a></div>
+    <div id="sum-position"><span class="skeleton"></span></div>
+  </section>
+  <section class="card" aria-labelledby="h-br">
+    <div class="card-head"><h2 id="h-br">Circuit breakers</h2>{{ tip('circuit_breaker') }}<span class="spacer"></span><a href="/riesgo" class="small">Ver riesgo →</a></div>
+    <div id="sum-breakers"><span class="skeleton"></span></div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Último evento importante</h2><span class="spacer"></span><a href="/registro" class="small">Ver registro →</a></div>
+  <div id="sum-event"><span class="skeleton"></span></div>
+</section>
+{{ controlbar(read_only, caps) }}
+{% endblock %}

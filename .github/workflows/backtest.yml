@@ -1,0 +1,96 @@
+# Backtest bajo demanda en GitHub Actions (sin claves: solo datos públicos de Kraken).
+# Uso: pestaña Actions → «Backtest» → Run workflow → elige el perfil de costes.
+# Resultados: resumen en la propia ejecución y CSV descargables en «Artifacts».
+name: Backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      costs:
+        description: "Perfil de costes"
+        type: choice
+        options: [margin, futures]
+        default: margin
+      walkforward:
+        description: "Incluir walk-forward (más lento)"
+        type: boolean
+        default: true
+      since:
+        description: "Descargar datos desde (AAAA-MM-DD)"
+        type: string
+        default: "2022-01-01"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      COSTS: ${{ inputs.costs }}
+      SINCE: ${{ inputs.since }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Validar parámetros
+        run: |
+          [[ "$SINCE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "Fecha no válida: $SINCE"; exit 1; }
+          [[ "$COSTS" == "margin" || "$COSTS" == "futures" ]] || { echo "Perfil no válido: $COSTS"; exit 1; }
+
+      - name: Tests
+        run: python -m pytest -q -p no:warnings
+
+      - name: Descargar datos de Kraken (API pública, sin claves)
+        run: python -m xrpbot.cli download --since "$SINCE"
+
+      - name: Backtest
+        run: python -m xrpbot.cli backtest --costs "$COSTS" --funding-filter off 2>&1 | grep -v " INFO " | tee backtest.txt
+
+      - name: Walk-forward
+        if: ${{ inputs.walkforward }}
+        run: python -m xrpbot.cli walkforward --costs "$COSTS" --funding-filter off 2>&1 | grep -v " INFO " | tee walkforward.txt
+
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "## Backtest PF_XRPUSD · costes: $COSTS · datos desde $SINCE"
+            echo
+            echo "> Resultados simulados sobre datos pasados. El rendimiento pasado no garantiza resultados futuros."
+            echo
+            echo '```'
+            cat backtest.txt 2>/dev/null || echo "(sin salida de backtest)"
+            echo '```'
+            if [ -f walkforward.txt ]; then
+              echo "### Walk-forward"
+              echo '```'
+              cat walkforward.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-${{ inputs.costs }}-${{ github.run_number }}
+          path: |
+            backtest.txt
+            walkforward.txt
+            reports/
+          if-no-files-found: warn
+          retention-days: 30

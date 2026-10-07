@@ -1,0 +1,29 @@
+{% macro tip(key) -%}
+<button class="tip" type="button" data-term="{{ key }}" aria-label="Qué es: {{ glossary[key][0] }}" aria-expanded="false">i</button>
+{%- endmacro %}
+
+{% macro stale_age(id) -%}
+<span class="age" data-age-for="{{ id }}"></span>
+{%- endmacro %}
+
+{% macro controlbar(read_only, caps) -%}
+{% if read_only %}
+<div class="controlbar ro-note" role="note">
+  <span class="badge badge-neutral">🔒 SOLO LECTURA</span>
+  <span class="muted">Los controles están desactivados (config/ui.yaml → read_only).</span>
+</div>
+{% elif not caps.control %}
+<div class="controlbar ro-note" role="note">
+  <span class="badge badge-neutral">⛔ CONTROL NO DISPONIBLE</span>
+  <span class="muted">{{ caps.note }}</span>
+</div>
+{% else %}
+<div class="controlbar" id="controlbar" aria-label="Acciones de control">
+  <button class="btn" type="button" data-cmd="pause" id="btn-pause">⏸ Pausar entradas</button>
+  <button class="btn" type="button" data-cmd="resume" id="btn-resume" hidden>▶ Reanudar</button>
+  <button class="btn" type="button" data-cmd="rearm" id="btn-rearm" hidden>🔄 Rearmar</button>
+  <button class="btn btn-danger-outline" type="button" data-cmd="close_position" id="btn-close">✖ Cerrar posición</button>
+  <button class="btn btn-danger" type="button" data-cmd="kill" id="btn-kill">⛔ KILL SWITCH</button>
+</div>
+{% endif %}
+{%- endmacro %}

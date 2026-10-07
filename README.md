@@ -158,6 +158,30 @@ python -m xrpbot.cli run                     # demo
   que demo, sim y real nunca se mezclan. Pasa siempre `--mode` a `kill`,
   `rearm`, `status` y `export`.
 
+### Funcionamiento 24/7 en Windows
+
+1. Añade al `.env` la confirmación del modo real (sustituye a escribir la
+   frase en cada arranque; quítala si dejas de operar en real):
+   ```
+   XRPBOT_LIVE_CONFIRM=OPERAR EN REAL PF_XRPUSD
+   ```
+2. Evita que el PC se suspenda (cmd como administrador):
+   ```bat
+   powercfg /change standby-timeout-ac 0
+   powercfg /change hibernate-timeout-ac 0
+   ```
+3. Arranca con reinicio automático: doble clic en `scripts\run_live.bat`, o
+   desde la terminal `scripts\run_live.bat`. Si el bot se cae (corte de red,
+   error), se vuelve a arrancar a los 60 s y reconcilia con Kraken.
+4. Opcional, para que arranque al iniciar sesión: Programador de tareas ->
+   Crear tarea básica -> "Al iniciar sesión" -> Iniciar un programa ->
+   `scripts\run_live.bat` (con "Iniciar en" = la carpeta del bot).
+
+Limitaciones: si el PC se apaga, se reinicia por actualizaciones de Windows o
+pierde internet un rato, el bot no opera durante ese tiempo (las órdenes de
+stop y TP siguen en Kraken). Para disponibilidad real 24/7, un VPS con Docker
+(ver arriba).
+
 ### Comportamiento ante incidencias
 
 | Situación | Reacción |
@@ -211,19 +235,24 @@ python -m xrpbot.cli run                     # demo
 - Riesgo del 1 % = distancia al stop + comisiones y slippage estimados de ida y
   vuelta. El tamaño se redondea **hacia abajo** al incremento del contrato; si
   queda por debajo del mínimo, no se opera.
-- Tope de 2x de apalancamiento efectivo sobre el nocional. Con stops de menos
-  del 0,5 % el tope manda y se arriesga **menos** del 1 % (es intencionado).
+- Tope de apalancamiento efectivo sobre el nocional (`risk.max_leverage`, 2x
+  por defecto, máximo permitido 10x). Solo actúa con stops muy cercanos: con
+  10x, stops a menos del ~0,1 %; con 2x, a menos del 0,5 %. En ese caso se
+  arriesga **menos** del 1 %. Subir el tope no aumenta el riesgo por
+  operación, pero sí el tamaño de las posiciones con stop cercano y el daño de
+  un hueco de precio.
 - **El 1 % no es un máximo garantizado:** un hueco de precio puede saltarse el
   stop. El backtest lo modela: sale a la apertura si la vela abre más allá del
   stop.
 
 ### Liquidación y margen
-- Se intenta fijar margen **aislado** a 2x. Si no es posible, se opera en
+- Se intenta fijar margen **aislado** al apalancamiento máximo configurado. Si no es posible, se opera en
   **cruzado** y se avisa: en ese caso deja en la cuenta de futuros solo el
   capital del bot.
 - La liquidación estimada debe quedar al menos 3 veces más lejos que el stop.
-  Es una estimación (Kraken usa tramos de margen); a 2x queda a ~49 % del
-  precio en aislado, muy lejos de cualquier stop de esta estrategia.
+  Es una estimación (Kraken usa tramos de margen). En aislado queda a ~49 % del
+  precio con 2x y a ~9 % con 10x: con 10x, un movimiento brusco de XRP puede
+  liquidar la posición, y el bot rechaza las entradas con stop a más del ~3 %.
 
 ### Funding
 - Se incluye en el backtest como pago horario. En vivo, el campo `funding` de
@@ -353,6 +382,28 @@ Después, **una sola vez**, el holdout: profit factor ≥ 1,1 y drawdown ≤ 20 
 - Revisión mensual: métricas en vivo frente a backtest y funding pagado.
 
 ---
+
+## Interfaz web (`xrpbot_ui`)
+
+Panel para monitorizar y controlar el bot de forma segura. Es un **proceso
+aparte**: no tiene claves, solo escucha en 127.0.0.1 y por defecto funciona en
+solo lectura.
+
+```bat
+python -m xrpbot_ui set-password      # una vez: crea el usuario admin
+python -m xrpbot_ui --demo            # datos simulados con escenarios (bot caído, límite diario, LIVE PILOTO…)
+```
+
+Abre http://127.0.0.1:8050. Tiene 9 pantallas: Resumen, Mercado, Posición,
+Riesgo, Historial, Backtest, Configuración, Salud y Registro. Tema oscuro o
+claro, y adaptada a móvil.
+
+| Documento | Contenido |
+|---|---|
+| `docs/ui/DESPLIEGUE.md` | Windows (script, Programador de tareas, NSSM), Linux (systemd, Docker), Tailscale para el móvil, lista de seguridad |
+| `docs/ui/contrato.md` | Contrato bot ↔ interfaz (**pendiente de confirmar**) y cambios que necesitaría el bot |
+| `docs/ui/sistema-diseno.md` / `.html` | Sistema de diseño: colores validados para daltonismo, componentes, formatos |
+| `docs/ui/PENDIENTES.md` | Tareas pendientes |
 
 ## Desarrollo
 

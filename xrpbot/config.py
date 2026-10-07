@@ -116,6 +116,11 @@ class BacktestCfg:
     fallback_maker_fee: float = 0.0002
     stop_trigger_source: str = "mark"
     offline_spec: OfflineSpecCfg = field(default_factory=OfflineSpecCfg)
+    # Perfiles de costes alternativos para comparar mercados (p. ej. margen de Kraken spot)
+    cost_profiles: dict[str, dict] = field(default_factory=lambda: {
+        "margin": {"taker_fee": 0.0040, "maker_fee": 0.0025, "open_fee": 0.0002,
+                   "rollover_fee_per_4h": 0.0002, "slippage_bps": 5},
+    })
 
 
 @dataclass
@@ -184,8 +189,8 @@ class Settings:
             raise ConfigError("max_daily_loss debe estar en (0, 10 %]")
         if r.max_daily_loss < r.risk_per_trade:
             raise ConfigError("max_daily_loss no puede ser menor que risk_per_trade")
-        if not 0 < r.max_leverage <= 5:
-            raise ConfigError("max_leverage debe estar en (0, 5]")
+        if not 0 < r.max_leverage <= 10:
+            raise ConfigError("max_leverage debe estar en (0, 10]")
         if r.max_open_positions != 1:
             raise ConfigError("Esta versión solo soporta max_open_positions = 1")
         if r.margin_mode not in ("isolated", "cross"):
