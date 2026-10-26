@@ -18,3 +18,5 @@ state/*
 !state/.gitkeep
 ui-state/
 backups/
+build/
+dist/

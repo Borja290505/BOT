@@ -1,0 +1,60 @@
+# Compila xrpbot.exe para Windows y lo publica en Releases → «xrpbot.exe (última versión)».
+# Sin claves ni secretos: el .exe no contiene ninguna clave; se configuran en .env junto a él.
+name: Windows .exe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, claude/algo-trading-bot-futures-u4hg9x]
+    paths: ["xrpbot/**", "xrpbot_ui/**", "config/**", "requirements.txt", ".env.example",
+            "scripts/build_exe.py", ".github/workflows/exe.yml"]
+
+concurrency:
+  group: exe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write          # solo para publicar el .exe en Releases
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt pyinstaller pillow
+      - name: Compilar
+        run: python scripts/build_exe.py
+      - name: Comprobar el .exe
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory prueba | Out-Null
+          Copy-Item dist\xrpbot.exe prueba\
+          Set-Location prueba
+          .\xrpbot.exe bot --help;      if ($LASTEXITCODE -ne 0) { exit 1 }
+          .\xrpbot.exe research --help; if ($LASTEXITCODE -ne 0) { exit 1 }
+          .\xrpbot.exe panel --help;    if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (-not (Test-Path config\settings.yaml)) { Write-Error "no se creó config"; exit 1 }
+          Get-Item ..\dist\xrpbot.exe | Select-Object Name, Length
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: xrpbot-exe-${{ github.run_number }}
+          path: dist/xrpbot.exe
+          retention-days: 14
+      - name: Publicar en Releases (última versión de la rama)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="exe-${GITHUB_REF_NAME//\//-}"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" dist/xrpbot.exe --prerelease --target "$GITHUB_SHA" \
+            --title "xrpbot.exe (última versión de $GITHUB_REF_NAME)" \
+            --notes "Compilado automáticamente desde ${GITHUB_SHA::7}. Descarga xrpbot.exe, ponlo en una carpeta vacía (fuera de OneDrive) y haz doble clic. Windows SmartScreen avisará porque no está firmado: «Más información» → «Ejecutar de todas formas». No contiene claves. Resultados de backtest simulados: no garantizan resultados futuros."

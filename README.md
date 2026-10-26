@@ -427,3 +427,22 @@ python -m pytest tests/test_backtest.py -k martingale -q
 
 Los tests no usan la red. La API de Kraken está simulada con datos sintéticos
 y un broker en memoria.
+
+## Ejecutable para Windows (`xrpbot.exe`)
+
+No hace falta instalar Python:
+
+1. En GitHub → **Releases** → «xrpbot.exe (última versión…)» → descarga `xrpbot.exe`.
+   Se recompila solo con cada cambio del código.
+2. Ponlo en una carpeta vacía **fuera de OneDrive** (p. ej. `C:\xrpbot`) y haz doble clic.
+   Windows SmartScreen avisará porque el .exe no está firmado: «Más información» →
+   «Ejecutar de todas formas».
+3. La primera vez crea `config\`, `state\`, `data\`… en esa carpeta y muestra un menú:
+   panel de demostración, bot en SIM con panel, descarga de datos, backtest,
+   investigación, estado, kill switch y rearme.
+
+Las claves (si algún día hacen falta) van en un `.env` junto al .exe, copiado de
+`.env.example`. **El modo real no está en el menú**: solo se arranca escribiendo
+`xrpbot.exe bot run --mode live --live`, que pide la confirmación escrita.
+
+Para compilarlo tú tras clonar el repositorio: `scripts\build_exe.bat` → `dist\xrpbot.exe`.
