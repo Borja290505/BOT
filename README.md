@@ -446,3 +446,14 @@ Las claves (si algún día hacen falta) van en un `.env` junto al .exe, copiado 
 `xrpbot.exe bot run --mode live --live`, que pide la confirmación escrita.
 
 Para compilarlo tú tras clonar el repositorio: `scripts\build_exe.bat` → `dist\xrpbot.exe`.
+
+### Sin .exe ni comandos (repositorio clonado)
+
+En la carpeta del repositorio, con doble clic:
+
+| Fichero | Qué hace |
+|---|---|
+| `1_INSTALAR.bat` | Crea el entorno de Python e instala todo (la primera vez y tras `git pull`) |
+| `2_MENU.bat` | El mismo menú que el .exe (panel, SIM, datos, backtest, investigación…) |
+| `3_ARRANCAR_REAL.bat` | **Dinero real**: comprueba las claves y pide la frase de confirmación |
+| `4_KILL_SWITCH_REAL.bat` | Parada de emergencia del modo real (pide escribir KILL) |
