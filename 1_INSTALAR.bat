@@ -33,7 +33,7 @@ if not exist .venv\Scripts\python.exe (
 )
 call .venv\Scripts\activate.bat
 python -m pip install --upgrade pip
-python -m pip install --only-binary=:all: -r requirements.txt || goto :error
+python -m pip install --prefer-binary -r requirements.txt || goto :error
 if not exist .env (
   copy .env.example .env >nul
   echo Creado .env: abrelo con el Bloc de notas para poner tus claves si vas a usar el modo real.
