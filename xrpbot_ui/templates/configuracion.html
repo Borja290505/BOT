@@ -11,6 +11,16 @@
   <div class="card-head"><h2>Estrategia</h2><span class="spacer"></span><span class="muted small">Solo lectura</span></div>
   <dl class="kv" id="cfg-strategy"></dl>
 </section>
+<section class="card" id="push-card">
+  <div class="card-head"><h2>Notificaciones en este dispositivo</h2>{{ tip('push') }}</div>
+  <p class="text-2" id="push-status">Comprobando…</p>
+  <div class="actions-inline">
+    <button class="btn btn-primary" type="button" id="push-enable" hidden>Activar notificaciones</button>
+    <button class="btn" type="button" id="push-test" hidden>Enviar prueba</button>
+    <button class="btn btn-ghost" type="button" id="push-disable" hidden>Desactivar en este dispositivo</button>
+  </div>
+  <p class="muted small">Llegan como push: avisos y errores del bot{% if caps.source == 'bot' %}, entradas y cierres de operaciones{% endif %}, y del watchdog si el bot deja de latir. Telegram sigue siendo el canal de respaldo: no lo desactives.</p>
+</section>
 <section class="card">
   <div class="card-head"><h2>Preferencias de esta pantalla</h2><span class="spacer"></span><span class="muted small">Se guardan solo en este navegador</span></div>
   <div class="form-grid">

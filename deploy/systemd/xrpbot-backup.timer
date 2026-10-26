@@ -1,0 +1,13 @@
+# /etc/systemd/system/xrpbot-backup.timer
+# Activar:  sudo systemctl enable --now xrpbot-backup.timer
+# Ver:      systemctl list-timers xrpbot-backup.timer
+[Unit]
+Description=xrpbot - copia de seguridad diaria
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -34,6 +34,9 @@ class StrategyParams:
     take_profit_r: float = 4.0
     funding_filter: bool = False
     funding_max_abs_hourly: float = 0.0001
+    # Filtro de tendencia (investigación): 0 = desactivado; N = largos solo si cierre > EMA(N),
+    # cortos solo si cierre < EMA(N). El bot en vivo no lo usa mientras no se valide.
+    trend_ema: int = 0
 
     @classmethod
     def from_cfg(cls, cfg: StrategyCfg) -> "StrategyParams":
@@ -47,7 +50,7 @@ class StrategyParams:
 
     @property
     def warmup_bars(self) -> int:
-        return max(self.entry_lookback + 1, self.atr_period * 3, self.exit_lookback) + 1
+        return max(self.entry_lookback + 1, self.atr_period * 3, self.exit_lookback, self.trend_ema) + 1
 
 
 def compute_indicators(df: pd.DataFrame, p: StrategyParams) -> pd.DataFrame:
@@ -59,6 +62,10 @@ def compute_indicators(df: pd.DataFrame, p: StrategyParams) -> pd.DataFrame:
     valid = out[["atr", "dc_upper", "dc_lower"]].notna().all(axis=1)
     out["long_signal"] = valid & (df["close"] > out["dc_upper"])
     out["short_signal"] = valid & (df["close"] < out["dc_lower"])
+    if p.trend_ema:
+        ema = df["close"].ewm(span=p.trend_ema, adjust=False, min_periods=p.trend_ema).mean()
+        out["long_signal"] &= df["close"] > ema
+        out["short_signal"] &= df["close"] < ema
     return out
 
 

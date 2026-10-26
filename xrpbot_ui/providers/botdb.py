@@ -5,7 +5,8 @@ Usa únicamente lo que el bot ya guarda hoy en state/xrpbot-{modo}.sqlite
 se abre con el modo de solo lectura de SQLite: la interfaz no puede
 modificarla aunque quisiera.
 
-Lo que depende del contrato del Paso 4 (latido, estado en vivo, circuit
+El latido (state/heartbeat-{modo}.json) da el estado vivo/caído del bot.
+Lo que depende del resto del contrato del Paso 4 (mercado en vivo, circuit
 breakers, salud y comandos) aparece como «pendiente de integración» hasta que
 el bot lo publique. No se inventan campos.
 """
@@ -19,11 +20,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from xrpbot.ops.heartbeat import heartbeat_path, read_heartbeat
+
 from ..contract import SCHEMA_VERSION, Command, CommandError, REDUCIBLE_PARAMS
 from .base import filter_trades, level_at_least
 from .demo import read_file_params
 
 PENDING = "Pendiente de integración: el bot todavía no publica este dato (contrato del Paso 4)."
+# El bot late cada ~5 s, pero un cierre de vela (descarga + órdenes) puede tardar más:
+# margen amplio para no mostrar «caído» en falso. El watchdog usa minutos.
+HEARTBEAT_STALE_S = 90
+PUSH_KINDS = ("entry", "trade_closed")
 
 
 def _ts(v) -> str | None:
@@ -41,6 +48,7 @@ class BotDBProvider:
         self.mode = mode
         self.symbol = symbol
         self.data_dir = Path(data_dir)
+        self.heartbeat_file = heartbeat_path(self.state_db.parent, mode)
         self.file_params, self.strategy = read_file_params(settings_path)
 
     # ------------------------------------------------------------ utilidades
@@ -57,7 +65,7 @@ class BotDBProvider:
 
     # ------------------------------------------------------------ API
     def capabilities(self) -> dict:
-        return {"source": "bot", "control": False, "live_status": False, "scenarios": {}, "scenario": None,
+        return {"source": "bot", "control": False, "live_status": self.heartbeat_file.exists(), "scenarios": {}, "scenario": None,
                 "backtest": (self.data_dir / f"{self.symbol}_trade_1h.parquet").exists(),
                 "note": PENDING, "db_exists": self.state_db.exists(), "db_path": str(self.state_db)}
 
@@ -83,6 +91,12 @@ class BotDBProvider:
                      "entries_blocked": False, "block_reasons": []},
             "breakers": [], "health": None, "last_event": None, "pending_note": PENDING,
         }
+        hb = read_heartbeat(self.heartbeat_file)
+        if hb:
+            snap["bot"].update({"state": hb.get("state") or "unknown", "reason": hb.get("reason"),
+                                "heartbeat_at": hb.get("ts"), "version": hb.get("version"),
+                                "started_at": hb.get("started_at"), "last_ok_at": hb.get("last_ok_at"),
+                                "heartbeat_stale_s": HEARTBEAT_STALE_S})
         conn = self._conn()
         if conn is None:
             snap["pending_note"] = f"No existe {self.state_db}: arranca el bot en modo {self.mode} al menos una vez."
@@ -230,6 +244,24 @@ class BotDBProvider:
                     if len(out) >= limit:
                         break
             return out
+
+    def events_after(self, last_id: int | None, min_level: str = "warning", trades: bool = True,
+                     limit: int = 50) -> tuple[int, list[dict]]:
+        """Eventos nuevos para avisar por push. Con last_id None solo devuelve el id actual (no avisa del pasado)."""
+        conn = self._conn()
+        if conn is None:
+            return (last_id or 0), []
+        with conn:
+            if last_id is None:
+                return int(conn.execute("SELECT COALESCE(MAX(id), 0) FROM events").fetchone()[0]), []
+            out, top = [], last_id
+            for r in conn.execute("SELECT id, ts, level, kind, message FROM events WHERE id>? ORDER BY id LIMIT ?",
+                                  (last_id, limit)):
+                top = r["id"]
+                if level_at_least(r["level"], min_level) or (trades and r["kind"] in PUSH_KINDS):
+                    out.append({"id": r["id"], "ts": _ts(r["ts"]), "level": r["level"], "kind": r["kind"],
+                                "message": r["message"]})
+            return top, out
 
     def alerts(self, limit: int = 200) -> list[dict]:
         # El bot no registra hoy qué alertas llegaron a Telegram: se muestran los eventos que las disparan.

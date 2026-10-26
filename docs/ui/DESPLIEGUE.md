@@ -88,6 +88,10 @@ nssm start xrpbot-ui
 
 ## 3. Linux en VPS (LIVE)
 
+> **Guía completa desde cero** (crear y asegurar el servidor, Docker, `.env`,
+> Tailscale, app en el iPhone, notificaciones, watchdog y copias): **`docs/VPS.md`**.
+> Esta sección es el resumen para quien ya tiene el servidor preparado.
+
 ### Opción A: systemd (sin Docker)
 
 ```bash
@@ -142,6 +146,9 @@ puertos en el router ni exponer nada a internet.
 3. En `config/ui.yaml` pon `secure_cookies: true`, porque el acceso pasa a ser
    HTTPS, y reinicia la interfaz.
 4. Abre `https://<maquina>.<tailnet>.ts.net` en el móvil.
+5. **iPhone:** Safari → Compartir → «Añadir a la pantalla de inicio». Ábrela
+   desde el icono y activa las notificaciones en **Configuración** (iOS 16.4+).
+   Paso a paso en `docs/VPS.md` §10.
 
 **No uses `tailscale funnel`:** funnel publica en internet. `serve` solo es
 accesible desde los dispositivos de tu tailnet.
@@ -158,7 +165,7 @@ los dispositivos.
 |---|---|
 | Actualizar | `git pull`, `pip install -r requirements.txt` y reinicia `xrpbot-ui` (el bot puede seguir en marcha) |
 | Cambiar contraseña | `python -m xrpbot_ui set-password` (cierra todas las sesiones abiertas) |
-| Copia de seguridad | `state/` (bot) y `ui-state/` (usuarios y auditoría). Con el bot parado, o con `sqlite3 x.sqlite ".backup y.sqlite"` |
+| Copia de seguridad | Automática: servicio `backup` (Docker) o `xrpbot-backup.timer` (systemd), diaria y verificada. A mano: `python -m xrpbot.ops backup` |
 | Auditoría | Pantalla **Registro → Auditoría**, o `sqlite3 ui-state/ui.sqlite "select * from audit order by id desc limit 50"` |
 | Tests | `python -m pytest -q` (incluye kill switch, cierre, rearme, solo lectura, CSRF, límite de intentos y aislamiento de claves) |
 

@@ -33,6 +33,11 @@ class UISettings:
     state_dir: str = "state"
     ui_db_path: str = "ui-state/ui.sqlite"
     display_timezone: str = "Europe/Madrid"
+    # Push web: contacto que se envía a Apple/Google con cada aviso (obligatorio en VAPID).
+    push_contact: str = "mailto:xrpbot@example.com"
+    # Eventos del bot que se envían como push: warning (avisos, errores y críticos) o critical
+    push_min_level: str = "warning"
+    push_trades: bool = True               # también entradas y cierres de operaciones
 
     def validate(self) -> None:
         try:
@@ -47,6 +52,10 @@ class UISettings:
             raise UISettingsError("source debe ser demo o bot")
         if self.mode not in ("sim", "live"):
             raise UISettingsError("mode debe ser sim o live")
+        if not (self.push_contact.startswith("mailto:") or self.push_contact.startswith("https://")):
+            raise UISettingsError("push_contact debe empezar por mailto: o https://")
+        if self.push_min_level not in ("warning", "error", "critical"):
+            raise UISettingsError("push_min_level debe ser warning, error o critical")
         if not 1 <= self.control_unlock_minutes <= 30:
             raise UISettingsError("control_unlock_minutes debe estar entre 1 y 30")
 

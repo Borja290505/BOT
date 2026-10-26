@@ -1,0 +1,51 @@
+# Investigación de la estrategia (docs/research/PLAN.md) con datos públicos de Kraken.
+# Sin claves. Se lanza a mano (Actions → Investigación → Run workflow) o al cambiar
+# el código de investigación en la rama de desarrollo.
+name: Investigación
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/algo-trading-bot-futures-u4hg9x]
+    paths: ["xrpbot/research/**", "docs/research/PLAN.md", ".github/workflows/research.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Tests
+        run: python -m pytest -q -p no:warnings
+      - name: Descargar datos de Kraken (API pública, sin claves)
+        run: python -m xrpbot.cli download --since 2022-01-01
+      - name: Investigación
+        run: python -m xrpbot.research --out reports/research 2>&1 | grep -v " INFO " | tee research.txt
+      - name: Resumen
+        if: always()
+        run: cat reports/research/informe.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || cat research.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-${{ github.run_number }}
+          path: |
+            research.txt
+            reports/research/
+          if-no-files-found: warn
+          retention-days: 30

@@ -82,6 +82,10 @@ GLOSSARY: dict[str, tuple[str, str]] = {
     "walk_forward": ("Walk-forward",
         "Validación por tramos: se eligen parámetros con datos pasados y se prueban en el tramo "
         "siguiente, que no se ha usado para elegirlos. Reduce el riesgo de engañarse con el backtest."),
+    "push": ("Notificaciones push",
+        "Avisos que llegan al móvil aunque la app esté cerrada. En iPhone hace falta iOS 16.4 o "
+        "posterior, añadir el panel a la pantalla de inicio y abrirlo desde ese icono. Si el teléfono "
+        "no tiene red, el aviso no llega: por eso Telegram sigue activo como respaldo."),
     "pilot": ("PILOTO",
         "LIVE con un tope de capital pequeño: sirve para validar el bot con dinero real arriesgando poco."),
 }
