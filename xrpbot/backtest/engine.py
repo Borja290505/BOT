@@ -57,6 +57,8 @@ class BacktestConfig:
     # sobre el nocional. En futuros son 0 y en su lugar se aplica el funding.
     open_fee: float = 0.0
     rollover_fee_per_4h: float = 0.0
+    # Duración de cada vela en horas (1 = 1 h). Solo afecta al rollover del margen.
+    bar_hours: float = 1.0
 
 
 @dataclass
@@ -220,8 +222,9 @@ def run_backtest(candles: pd.DataFrame, params: StrategyParams, cfg: BacktestCon
             cash += pay
 
         # 3b) Rollover del margen: cada 4 horas completas con la posición abierta.
-        if pos is not None and cfg.rollover_fee_per_4h and pos.bars_held % 4 == 0:
-            roll = pos.size * cs * tc[i] * cfg.rollover_fee_per_4h
+        roll_every = max(1, round(4 / cfg.bar_hours))
+        if pos is not None and cfg.rollover_fee_per_4h and pos.bars_held % roll_every == 0:
+            roll = pos.size * cs * tc[i] * cfg.rollover_fee_per_4h * max(1.0, cfg.bar_hours / 4)
             pos.fees += roll
             cash -= roll
 
