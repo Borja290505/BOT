@@ -1,0 +1,26 @@
+# /etc/systemd/system/xrpbot-watchdog.service
+# Watchdog INDEPENDIENTE del bot: avisa por push web y Telegram si el bot deja de latir.
+# Solo lee state/heartbeat-{modo}.json. NO lee .env (sin claves de Kraken): sus variables
+# van en /etc/xrpbot/watchdog.env (chmod 600), con solo TELEGRAM_* y WATCHDOG_*.
+[Unit]
+Description=xrpbot - watchdog del latido del bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=xrpbot-ui
+WorkingDirectory=/opt/xrpbot
+EnvironmentFile=/etc/xrpbot/watchdog.env
+Environment=UI_STATE_DIR=/opt/xrpbot/ui-state
+ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot.ops watchdog --mode sim
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xrpbot/ui-state
+InaccessiblePaths=/opt/xrpbot/.env
+
+[Install]
+WantedBy=multi-user.target

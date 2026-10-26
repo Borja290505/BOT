@@ -7,7 +7,7 @@ After=network-online.target
 [Service]
 User=xrpbot-ui
 WorkingDirectory=/opt/xrpbot
-ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot_ui
+ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot_ui --source bot --mode sim
 Restart=always
 RestartSec=10
 NoNewPrivileges=true

@@ -119,3 +119,16 @@ async def test_reconcile_freezes_on_unknown_position(bot):
     assert len(stops) == 1     # stop de emergencia
     await bot.on_bar_close()   # congelado: no abre nada nuevo
     assert bot.db.active_trade() is None
+
+
+async def test_heartbeat_reports_state(bot, tmp_path):
+    from xrpbot.ops.heartbeat import read_heartbeat
+    await bot.setup()
+    assert bot.heartbeat_file == tmp_path / "heartbeat-sim.json"
+    bot._beat("2026-10-26T00:00:00+00:00", None)
+    hb = read_heartbeat(bot.heartbeat_file)
+    assert hb["state"] == "active" and hb["mode"] == "sim" and hb["last_ok_at"] is None
+    bot.guard.halt("prueba")
+    bot._beat("2026-10-26T00:00:00+00:00", "2026-10-26T00:01:00+00:00")
+    hb = read_heartbeat(bot.heartbeat_file)
+    assert hb["state"] == "halted" and "prueba" in hb["reason"]

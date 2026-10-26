@@ -1,0 +1,15 @@
+# /etc/systemd/system/xrpbot-backup.service  (lo lanza xrpbot-backup.timer una vez al día)
+# Copia en caliente de las bases SQLite del bot y de la interfaz, con comprobación de integridad.
+[Unit]
+Description=xrpbot - copia de seguridad de las bases SQLite
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/xrpbot
+ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot.ops backup --source state --source ui-state --dest backups --keep 14
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xrpbot/backups /opt/xrpbot/state /opt/xrpbot/ui-state

@@ -128,6 +128,21 @@
         },
         "effective_state": {
           "description": "Lo añade la interfaz (no el bot): 'down' si el latido tiene > 15 s"
+        },
+        "heartbeat_stale_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Segundos sin latido a partir de los cuales la interfaz muestra el bot como caído (por defecto 15)"
+        },
+        "last_ok_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "Último ciclo completo sin errores (fichero de latido)"
         }
       }
     },

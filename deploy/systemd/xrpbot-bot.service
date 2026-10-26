@@ -7,8 +7,9 @@ Wants=network-online.target
 [Service]
 User=xrpbot
 WorkingDirectory=/opt/xrpbot
-# Modo real: requiere XRPBOT_LIVE_CONFIRM en /opt/xrpbot/.env. Para SIM: --mode sim
-ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot.cli run --mode live --live
+# Empieza en SIM. Modo real (tras el plan de pruebas): --mode live --live y
+# XRPBOT_LIVE_CONFIRM en /opt/xrpbot/.env. Cambia también el modo del watchdog y de la interfaz.
+ExecStart=/opt/xrpbot/.venv/bin/python -m xrpbot.cli run --mode sim
 Restart=always
 RestartSec=30
 # Endurecimiento

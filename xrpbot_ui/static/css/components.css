@@ -23,6 +23,13 @@ a { color: var(--info-text); }
 .text-2 { color: var(--text-2); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Táctil (móvil, PWA): objetivos más grandes y sin el zoom/resaltado del navegador */
+@media (pointer: coarse) {
+  :root { --touch: 48px; }
+  .btn, .input, select { font-size: 16px; }          /* < 16 px hace que iOS amplíe la página al escribir */
+  a, button { -webkit-tap-highlight-color: transparent; }
+}
+
 /* ---------- Estructura de la aplicación ---------- */
 .app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
 .app[data-mode="live"] { box-shadow: inset 0 0 0 4px var(--mode-live); }   /* borde inconfundible en LIVE */
@@ -30,6 +37,10 @@ a { color: var(--info-text); }
 .mode-band {
   display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
   min-height: var(--header-h); padding: var(--sp-2) var(--sp-4);
+  /* PWA en iPhone (barra de estado translúcida): no meterse bajo el notch ni la isla */
+  padding-top: max(var(--sp-2), env(safe-area-inset-top));
+  padding-left: max(var(--sp-4), env(safe-area-inset-left));
+  padding-right: max(var(--sp-4), env(safe-area-inset-right));
   background: var(--surface-1); border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 20;
 }
@@ -52,10 +63,17 @@ a { color: var(--info-text); }
 @media (max-width: 760px) {
   .layout { grid-template-columns: 1fr; }
   .sidenav { display: none; }
-  .main { padding: var(--sp-4); padding-bottom: calc(var(--bottom-nav-h) + var(--sp-4) + 72px); }
+  .main {
+    padding: var(--sp-4);
+    padding-left: max(var(--sp-4), env(safe-area-inset-left));
+    padding-right: max(var(--sp-4), env(safe-area-inset-right));
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + var(--sp-4) + 72px);
+  }
   .bottomnav {
     display: grid; grid-template-columns: repeat(4, 1fr);
-    position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottom-nav-h);
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     background: var(--surface-1); border-top: 1px solid var(--border); z-index: 20;
   }
   .bottomnav a { flex-direction: column; justify-content: center; gap: 2px; font-size: var(--fs-xs); }
@@ -194,7 +212,7 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 .controlbar { display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: center; }
 @media (max-width: 760px) {
   .controlbar {
-    position: fixed; left: 0; right: 0; bottom: var(--bottom-nav-h); z-index: 19;
+    position: fixed; left: 0; right: 0; bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)); z-index: 19;
     padding: var(--sp-2) var(--sp-3); background: var(--surface-1); border-top: 1px solid var(--border);
   }
   .controlbar .btn { flex: 1; padding: 0 var(--sp-2); }

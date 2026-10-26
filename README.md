@@ -101,15 +101,27 @@ Pon `alerts.telegram_enabled: true` en `config/settings.yaml`. Solo envía
 alertas: señales, entradas, salidas, errores, paradas y kill switch. No acepta
 comandos.
 
-### Docker (VPS)
+### Docker (VPS 24/7)
+
+Guía completa desde cero, con servidor, seguridad, Tailscale e iPhone, en
+**`docs/VPS.md`**.
 
 ```bash
 docker compose build
-docker compose up -d bot-demo                      # demo, se reinicia solo
-docker compose logs -f bot-demo
-docker compose run --rm cli status --mode demo
-docker compose run --rm cli kill --mode demo       # KILL SWITCH
+docker compose run --rm ui set-password            # contraseña de la interfaz
+docker compose up -d                               # bot SIM + interfaz + watchdog + copias diarias
+docker compose ps                                  # (healthy) = latido reciente
+docker compose logs -f bot
+docker compose run --rm cli status --mode sim
+docker compose run --rm cli kill --mode sim        # KILL SWITCH
 ```
+
+| Pieza | Qué hace |
+|---|---|
+| Latido | El bot escribe `state/heartbeat-{modo}.json` en cada ciclo. Lo usan el healthcheck de Docker, el watchdog y la interfaz |
+| Watchdog | Proceso aparte (`python -m xrpbot.ops watchdog`). Avisa por push y por Telegram si no hay latido en `WATCHDOG_MAX_SILENCE_MIN` (5 min por defecto) |
+| Copias | `python -m xrpbot.ops backup`: copia en caliente de las bases SQLite, verificada, cada 24 h, y conserva 14 días |
+| Logs | Docker rota a 5 × 20 MB por servicio. El bot rota su fichero diario y conserva 30 días |
 
 El estado (`state/`), los datos (`data/`) y los logs (`logs/`) viven en volúmenes
 del host, así que sobreviven a reinicios y a reconstrucciones del contenedor.
@@ -400,6 +412,7 @@ claro, y adaptada a móvil.
 
 | Documento | Contenido |
 |---|---|
+| `docs/VPS.md` | **Despliegue 24/7 desde cero**: VPS asegurado, Docker, watchdog, copias diarias, Tailscale y app (PWA) en el iPhone con notificaciones |
 | `docs/ui/DESPLIEGUE.md` | Windows (script, Programador de tareas, NSSM), Linux (systemd, Docker), Tailscale para el móvil, lista de seguridad |
 | `docs/ui/contrato.md` | Contrato bot ↔ interfaz (**pendiente de confirmar**) y cambios que necesitaría el bot |
 | `docs/ui/sistema-diseno.md` / `.html` | Sistema de diseño: colores validados para daltonismo, componentes, formatos |

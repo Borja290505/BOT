@@ -20,6 +20,7 @@ import logging
 import math
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
@@ -35,6 +36,7 @@ from ..execution.oco import TradeState, make_trade_id
 from ..execution.order_manager import OrderManager
 from ..models import MarketSnapshot, OrderRequest, Side
 from ..monitoring.telegram import TelegramNotifier
+from ..ops.heartbeat import heartbeat_path, write_heartbeat
 from ..risk.circuit_breaker import book_depth_within, entry_block_reasons
 from ..risk.limits import DailyLossGuard, estimate_liquidation_price, liquidation_is_safe
 from ..risk.sizing import position_size
@@ -53,6 +55,7 @@ class LiveBot:
         self.symbol = settings.symbol.upper()
         self.params = StrategyParams.from_cfg(settings.strategy)
         self.db = Database(settings.storage.db_path)
+        self.heartbeat_file = heartbeat_path(Path(settings.storage.db_path).parent, settings.mode.value)
         self.guard = DailyLossGuard(self.db, settings.risk.max_daily_loss)
         self.notify = TelegramNotifier(settings.secrets.telegram_token, settings.secrets.telegram_chat_id,
                                        prefix=f"[{settings.mode.value}] ") \
@@ -149,8 +152,11 @@ class LiveBot:
         self._force_reconcile = True
         last_reconcile = 0.0
         next_bar = self._next_bar_time()
+        started_at = datetime.now(timezone.utc).isoformat()
+        last_ok_at: str | None = None
         try:
             while not self._stop.is_set():
+                cycle_ok = False
                 try:
                     await self._feed_paper()
                     if self._force_reconcile or time.time() - last_reconcile > self.s.execution.reconcile_interval_s:
@@ -160,12 +166,16 @@ class LiveBot:
                     if time.time() >= next_bar:
                         await self.on_bar_close()
                         next_bar = self._next_bar_time()
+                    cycle_ok = True
                 except (KrakenAPIError, OSError, asyncio.TimeoutError) as exc:
                     log.error("Error en el bucle principal (se reintenta): %r", exc)
                     self.db.log_event("error", "loop", repr(exc))
                 except Exception as exc:  # noqa: BLE001
                     log.exception("Error inesperado: el bot se CONGELA por seguridad")
                     self.freeze(f"error inesperado: {exc!r}")
+                if cycle_ok:
+                    last_ok_at = datetime.now(timezone.utc).isoformat()
+                self._beat(started_at, last_ok_at)
                 self.wake.clear()
                 try:
                     await asyncio.wait_for(self.wake.wait(), timeout=self.s.execution.poll_interval_s)
@@ -177,6 +187,16 @@ class LiveBot:
             await self.notify.stop()
             await self.rest.close()
             self.db.close()
+
+    def _beat(self, started_at: str, last_ok_at: str | None) -> None:
+        """Latido para healthcheck, watchdog e interfaz. Nunca debe tumbar el bucle."""
+        state = "halted" if self.guard.halted else "frozen" if self.frozen_reason else "active"
+        try:
+            write_heartbeat(self.heartbeat_file, mode=self.s.mode.value, state=state,
+                            reason=self.guard.halt_reason or self.frozen_reason or None,
+                            started_at=started_at, last_ok_at=last_ok_at)
+        except OSError as exc:
+            log.warning("No se pudo escribir el latido: %r", exc)
 
     def _next_bar_time(self) -> float:
         now = time.time()

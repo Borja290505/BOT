@@ -4,6 +4,7 @@
     python -m xrpbot_ui --demo                    # datos simulados (sin bot ni Kraken)
     python -m xrpbot_ui --demo --scenario caido   # empieza en un escenario concreto
     python -m xrpbot_ui                           # según config/ui.yaml (source: demo | bot)
+    python -m xrpbot_ui --source bot --mode sim   # lee el bot real en SIM (Docker/VPS)
 
 Escucha SOLO en 127.0.0.1. Para el móvil: Tailscale (ver docs/ui/DESPLIEGUE.md).
 """
@@ -38,9 +39,11 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--scenario", help="escenario inicial de la demo")
     ap.add_argument("--user", default="admin")
     ap.add_argument("--port", type=int)
+    ap.add_argument("--source", choices=["demo", "bot"], help="sustituye a source de ui.yaml")
+    ap.add_argument("--mode", choices=["sim", "live"], help="sustituye a mode de ui.yaml")
     args = ap.parse_args(argv)
     try:
-        s = load_ui_settings(args.config, port=args.port)
+        s = load_ui_settings(args.config, port=args.port, source=args.source, mode=args.mode)
     except UISettingsError as exc:
         raise SystemExit(f"Configuración no válida: {exc}") from None
 

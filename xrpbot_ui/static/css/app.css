@@ -78,7 +78,7 @@ td.neg, .neg { color: var(--critical-text); }
 dialog.sheet .body { display: grid; gap: var(--sp-2); }
 .sheet-link { justify-content: flex-start; }
 
-.login-page { display: grid; place-items: center; min-height: 100vh; padding: var(--sp-4); }
+.login-page { display: grid; place-items: center; min-height: 100vh; padding: max(var(--sp-4), env(safe-area-inset-top)) max(var(--sp-4), env(safe-area-inset-right)) max(var(--sp-4), env(safe-area-inset-bottom)) max(var(--sp-4), env(safe-area-inset-left)); }
 .login { width: min(420px, 100%); display: grid; gap: var(--sp-4); }
 
 .ro-note { color: var(--text-2); }

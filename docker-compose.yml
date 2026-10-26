@@ -1,36 +1,105 @@
-# Por defecto arranca en DEMO. Uso:
-#   docker compose up -d bot-demo            # bot en demo, se reinicia solo
-#   docker compose run --rm cli status --mode demo
-#   docker compose run --rm cli kill --mode demo        # KILL SWITCH
-#   docker compose run --rm cli backtest
-services:
-  bot-demo:
-    build: .
-    command: ["run", "--mode", "demo"]
-    env_file: .env
-    restart: unless-stopped
-    volumes: [./state:/app/state, ./data:/app/data, ./logs:/app/logs, ./config:/app/config:ro]
-    logging: {driver: json-file, options: {max-size: "20m", max-file: "5"}}
+# Despliegue 24/7 en un VPS Linux. Guía completa: docs/VPS.md
+#
+#   docker compose up -d --build            # bot (SIM) + interfaz + watchdog + copias diarias
+#   docker compose ps                       # estado y healthcheck de cada servicio
+#   docker compose logs -f bot              # log del bot
+#   docker compose run --rm cli status --mode sim
+#   docker compose run --rm cli kill --mode sim         # KILL SWITCH
+#   docker compose run --rm cli rearm --mode sim
+#
+# Todos los contenedores corren con el usuario uid 1000: las carpetas state/ data/ logs/
+# reports/ ui-state/ backups/ del servidor deben ser de ese uid (ver docs/VPS.md).
 
-  # Modo real: descomenta SOLO tras superar el plan de pruebas.
-  # Requiere XRPBOT_LIVE_CONFIRM="OPERAR EN REAL PF_XRPUSD" en .env (confirmación explícita).
+x-logging: &logging           # rotación de logs de Docker: máx. 5 × 20 MB por servicio
+  driver: json-file
+  options: {max-size: "20m", max-file: "5"}
+
+services:
+  # ------------------------------------------------------------------ BOT (SIM)
+  # Simulador interno con precios reales de Kraken: no envía órdenes ni necesita claves.
+  bot:
+    build: .
+    command: ["run", "--mode", "sim"]
+    env_file: .env                   # en SIM solo se usan TELEGRAM_*; las claves de Kraken no se leen
+    restart: unless-stopped
+    stop_grace_period: 30s
+    volumes: [./state:/app/state, ./data:/app/data, ./logs:/app/logs, ./config:/app/config:ro]
+    healthcheck:                     # sano = latido de menos de 2 minutos (state/heartbeat-sim.json)
+      test: ["CMD", "python", "-m", "xrpbot.ops", "healthcheck", "--mode", "sim", "--max-age", "120"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    logging: *logging
+
+  # ------------------------------------------------------------------ BOT (REAL)
+  # Descomenta SOLO tras superar el plan de pruebas del README, y comenta «bot».
+  # Requiere XRPBOT_LIVE_CONFIRM="OPERAR EN REAL PF_XRPUSD" en .env. Cambia también
+  # --mode sim por --mode live en «ui» y «watchdog».
   # bot-live:
   #   build: .
   #   command: ["run", "--mode", "live", "--live"]
   #   env_file: .env
   #   restart: unless-stopped
+  #   stop_grace_period: 30s
   #   volumes: [./state:/app/state, ./data:/app/data, ./logs:/app/logs, ./config:/app/config:ro]
+  #   healthcheck:
+  #     test: ["CMD", "python", "-m", "xrpbot.ops", "healthcheck", "--mode", "live", "--max-age", "120"]
+  #     interval: 60s
+  #     timeout: 15s
+  #     retries: 3
+  #     start_period: 120s
+  #   logging: *logging
 
-  # Interfaz web: proceso aparte, SIN .env (sin claves). network_mode host para que
-  # 127.0.0.1 sea el del servidor (Linux). Acceso remoto: tailscale serve en el host.
+  # ------------------------------------------------------------------ INTERFAZ (PWA)
+  # Proceso aparte, SIN .env (sin claves). network_mode host: escucha en 127.0.0.1 del
+  # servidor y Tailscale la publica (tailscale serve) solo dentro de tu red privada.
   ui:
     build: .
     entrypoint: ["python", "-m", "xrpbot_ui"]
-    command: ["--config", "config/ui.yaml"]
+    command: ["--config", "config/ui.yaml", "--source", "bot", "--mode", "sim"]
     network_mode: host
     restart: unless-stopped
     volumes: [./state:/app/state:ro, ./data:/app/data:ro, ./ui-state:/app/ui-state, ./config:/app/config:ro]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8050/healthz', timeout=5)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *logging
 
+  # ------------------------------------------------------------------ WATCHDOG
+  # Independiente del bot: solo lee el latido. Sin claves de Kraken: recibe únicamente
+  # las variables de Telegram y del ping externo (Compose las toma del fichero .env).
+  watchdog:
+    build: .
+    entrypoint: ["python", "-m", "xrpbot.ops"]
+    command: ["watchdog", "--mode", "sim"]
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      WATCHDOG_MAX_SILENCE_MIN: ${WATCHDOG_MAX_SILENCE_MIN:-5}
+      WATCHDOG_REMIND_MIN: ${WATCHDOG_REMIND_MIN:-30}
+      WATCHDOG_PING_URL: ${WATCHDOG_PING_URL:-}
+      UI_STATE_DIR: /app/ui-state     # para enviar también push web a la PWA
+    volumes: [./state:/app/state:ro, ./ui-state:/app/ui-state]
+    logging: *logging
+
+  # ------------------------------------------------------------------ COPIAS DE SEGURIDAD
+  # Copia en caliente de las bases SQLite (bot e interfaz) al arrancar y cada 24 h,
+  # con comprobación de integridad. Guarda 14 días en ./backups/AAAA-MM-DD/.
+  backup:
+    build: .
+    entrypoint: ["python", "-m", "xrpbot.ops"]
+    command: ["backup", "--source", "state", "--source", "ui-state", "--dest", "backups",
+              "--every-hours", "24", "--keep", "14"]
+    restart: unless-stopped
+    volumes: [./state:/app/state, ./ui-state:/app/ui-state, ./backups:/app/backups]
+    logging: *logging
+
+  # ------------------------------------------------------------------ HERRAMIENTAS
   cli:
     build: .
     profiles: ["tools"]

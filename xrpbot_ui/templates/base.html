@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/static/css/tokens.css">
 <link rel="stylesheet" href="/static/css/components.css">
 <link rel="stylesheet" href="/static/css/app.css">
-<link rel="icon" href="data:,">
+{% include "_pwa_head.html" %}
 </head>
 <body data-page="{{ page }}" data-read-only="{{ 'true' if read_only else 'false' }}" data-source="{{ caps.source }}"
       data-control-minutes="{{ control_minutes }}">

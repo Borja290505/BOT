@@ -371,9 +371,44 @@
       classic.addEventListener("change", () => { XB.setPref("classic", classic.checked ? "1" : "0"); XB.classicCandles = classic.checked; });
       local.addEventListener("change", () => { $("#tz-toggle").click(); });
       await loadCfg();
+      initPush();
       XB.onState(() => {});
     },
   };
+  const PUSH_TEXT = {
+    insecure: "Las notificaciones exigen HTTPS. Abre el panel con la dirección https://….ts.net de Tailscale (tailscale serve), no con http://.",
+    "needs-install": "En iPhone: pulsa Compartir (el cuadrado con la flecha hacia arriba) → «Añadir a la pantalla de inicio», abre el panel desde ese icono y vuelve aquí. Necesitas iOS 16.4 o posterior.",
+    unsupported: "Este navegador no admite notificaciones push. Usa Telegram como canal de avisos.",
+    denied: "Has bloqueado las notificaciones. En iPhone: Ajustes → Notificaciones → xrpbot → Permitir. Después recarga.",
+    off: "Desactivadas en este dispositivo.",
+    on: "Activadas en este dispositivo ✔",
+  };
+  async function initPush() {
+    const P = window.XBPWA;
+    const st = $("#push-status"), en = $("#push-enable"), te = $("#push-test"), di = $("#push-disable");
+    if (!st || !P) return;
+    async function refresh() {
+      let s;
+      try { s = await P.status(); } catch (e) { s = "unsupported"; }
+      st.textContent = PUSH_TEXT[s] || s;
+      en.hidden = s !== "off"; te.hidden = s !== "on"; di.hidden = s !== "on";
+    }
+    en.addEventListener("click", async () => {
+      en.disabled = true;
+      try { await P.enable(XB.post, XB.get); XB.feedback("good", "Notificaciones activadas", "Pulsa «Enviar prueba» para comprobarlo."); }
+      catch (e) { XB.feedback("critical", "No se pudieron activar", e.message); }
+      en.disabled = false; refresh();
+    });
+    te.addEventListener("click", async () => {
+      try {
+        const r = await XB.post("/api/push/test");
+        XB.feedback(r.delivered ? "good" : "warning", r.delivered ? "Prueba enviada" : "No se entregó ninguna",
+          `Entregadas: ${r.delivered} de ${r.subscriptions} dispositivo(s). Puede tardar unos segundos.`);
+      } catch (e) { XB.feedback("critical", "Prueba fallida", e.message); }
+    });
+    di.addEventListener("click", async () => { await P.disable(XB.post); refresh(); });
+    refresh();
+  }
   const isFrac = (unit) => unit === "fracción";
   const show = (v, unit) => (isFrac(unit) ? pct(v, 2) : num(v, 2) + " " + unit);
   async function loadCfg() {

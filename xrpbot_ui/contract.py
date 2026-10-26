@@ -133,6 +133,6 @@ def derive_state(bot: dict, now: datetime | None = None) -> str:
     if not hb:
         return "down"
     age = ((now or datetime.now(timezone.utc)) - datetime.fromisoformat(hb)).total_seconds()
-    if age > HEARTBEAT_STALE_S:
+    if age > (bot.get("heartbeat_stale_s") or HEARTBEAT_STALE_S):
         return "down"
     return bot.get("state", "down")

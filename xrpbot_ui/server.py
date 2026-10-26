@@ -15,6 +15,7 @@ import asyncio
 import csv
 import io
 import json
+import logging
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -22,7 +23,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import (FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response,
+                               StreamingResponse)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -31,12 +33,15 @@ from .backtest_jobs import BacktestParamError, BacktestRunner, parse_params
 from .contract import (CONFIRM_WORDS, REDUCIBLE_PARAMS, Command, CommandError, check_confirm_word,
                        derive_state, validate_command_shape, validate_reduction)
 from .glossary import GLOSSARY
+from .push import PushError, PushService
 from .security import LoginError, SecurityStore, Session
 from .settings import UISettings
 
 HERE = Path(__file__).parent
 COOKIE = "xrpbot_session"
 SSE_INTERVAL_S = 2.0
+PUSH_POLL_S = 10.0
+log = logging.getLogger("xrpbot_ui")
 
 PAGES = [
     ("resumen", "/", "Resumen", "◉"),
@@ -52,26 +57,62 @@ PAGES = [
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
        "connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; "
-       "object-src 'none'")
+       "object-src 'none'; manifest-src 'self'; worker-src 'self'")
+KIND_TITLE = {"entry": "Entrada", "trade_closed": "Operación cerrada"}
+LEVEL_TITLE = {"warning": "Aviso", "error": "Error", "critical": "CRÍTICO"}
 
 
 def client_ip(request: Request) -> str:
     return request.client.host if request.client else ""
 
 
+async def push_bot_events(provider, push: PushService, settings: UISettings, once: bool = False) -> int:
+    """Reenvía como push los eventos importantes que el bot escribe en su base de datos.
+
+    Solo lee (la base del bot se abre en modo lectura) y recuerda el último id avisado
+    en ui-state/push.sqlite, así un reinicio de la interfaz no repite avisos.
+    """
+    key = f"last_event_id:{settings.mode}"
+    sent = 0
+    while True:
+        try:
+            if push.count():
+                raw = push.get(key)
+                top, events = await asyncio.to_thread(provider.events_after, int(raw) if raw else None,
+                                                      settings.push_min_level, settings.push_trades)
+                for ev in events:
+                    title = f"[{settings.mode.upper()}] " + (KIND_TITLE.get(ev["kind"]) or LEVEL_TITLE.get(ev["level"], "Evento"))
+                    sent += await asyncio.to_thread(push.send_all, title, ev["message"] or "", ev["level"],
+                                                    "/registro", ev["kind"])
+                push.set(key, str(top))
+        except Exception as exc:  # noqa: BLE001 - un fallo de push nunca debe tumbar la interfaz
+            log.warning("Push de eventos del bot falló: %r", exc)
+        if once:
+            return sent
+        await asyncio.sleep(PUSH_POLL_S)
+
+
 def create_app(settings: UISettings, provider, store: SecurityStore,
-               runner: BacktestRunner | None = None) -> FastAPI:
+               runner: BacktestRunner | None = None, push: PushService | None = None) -> FastAPI:
     runner = runner or BacktestRunner()
+    push = push or PushService(Path(settings.ui_db_path).parent, settings.push_contact)
 
     @asynccontextmanager
     async def lifespan(_app):
+        task = None
+        if hasattr(provider, "events_after"):
+            task = asyncio.create_task(push_bot_events(provider, push, settings))
         yield
+        if task:
+            task.cancel()
         runner.shutdown()
 
     app = FastAPI(title="xrpbot · interfaz", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     templates = Jinja2Templates(directory=str(HERE / "templates"))
     app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
     app.state.runner = runner
+    app.state.push = push
+    static = HERE / "static"
 
     # ------------------------------------------------------------ middleware
     @app.middleware("http")
@@ -87,7 +128,7 @@ def create_app(settings: UISettings, provider, store: SecurityStore,
         # same-origin (no "no-referrer"): con no-referrer Chrome manda "Origin: null" en los formularios
         resp.headers["Referrer-Policy"] = "same-origin"
         resp.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        if request.url.path.startswith("/api") or request.url.path in ("/login",):
+        if request.url.path.startswith("/api") or request.url.path in ("/login", "/healthz"):
             resp.headers["Cache-Control"] = "no-store"
         return resp
 
@@ -116,6 +157,31 @@ def create_app(settings: UISettings, provider, store: SecurityStore,
         caps = provider.capabilities()
         snap["bot"]["effective_state"] = derive_state(snap["bot"]) if caps.get("live_status") else "unknown"
         return {"snapshot": snap, "capabilities": caps, "ui": ui_state(sess)}
+
+    # ------------------------------------------------------------ PWA (públicos: no contienen datos del bot)
+    @app.get("/healthz")
+    async def healthz():
+        """Healthcheck de Docker/systemd: solo dice que la interfaz responde."""
+        return {"ok": True}
+
+    @app.get("/manifest.webmanifest")
+    async def manifest():
+        return FileResponse(static / "manifest.webmanifest", media_type="application/manifest+json")
+
+    @app.get("/sw.js")
+    async def service_worker():
+        # en la raíz para que su ámbito sea toda la aplicación; sin caché para que se actualice
+        return FileResponse(static / "sw.js", media_type="text/javascript",
+                            headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
+
+    @app.get("/apple-touch-icon.png")
+    @app.get("/apple-touch-icon-precomposed.png")
+    async def apple_icon():
+        return FileResponse(static / "icons" / "apple-touch-icon.png", media_type="image/png")
+
+    @app.get("/favicon.ico")
+    async def favicon():
+        return FileResponse(static / "icons" / "favicon-32.png", media_type="image/png")
 
     # ------------------------------------------------------------ login
     @app.get("/login", response_class=HTMLResponse)
@@ -344,6 +410,44 @@ def create_app(settings: UISettings, provider, store: SecurityStore,
                         f"{cmd.type} id={cmd.id}", f"{cmd.status}: {cmd.result}")
             cmd._audited = True
         return cmd.to_dict()
+
+    # ------------------------------------------------------------ notificaciones push
+    @app.get("/api/push/key")
+    async def api_push_key(request: Request):
+        require_session(request)
+        key = await asyncio.to_thread(push.public_key)
+        return {"public_key": key, "subscriptions": push.count()}
+
+    @app.post("/api/push/subscribe")
+    async def api_push_subscribe(request: Request):
+        sess = require_session(request)
+        require_csrf(request, sess)
+        sub = await request.json()
+        try:
+            push.subscribe(sub, request.headers.get("user-agent", ""))
+        except PushError as exc:
+            store.audit(sess.username, client_ip(request), "push_subscribe", str(exc), "rejected")
+            raise HTTPException(422, str(exc)) from None
+        store.audit(sess.username, client_ip(request), "push_subscribe",
+                    urlparse(str(sub.get("endpoint", ""))).hostname or "", "ok")
+        return {"ok": True, "subscriptions": push.count()}
+
+    @app.post("/api/push/unsubscribe")
+    async def api_push_unsubscribe(request: Request):
+        sess = require_session(request)
+        require_csrf(request, sess)
+        push.unsubscribe(str((await request.json()).get("endpoint", "")))
+        store.audit(sess.username, client_ip(request), "push_unsubscribe", "", "ok")
+        return {"ok": True, "subscriptions": push.count()}
+
+    @app.post("/api/push/test")
+    async def api_push_test(request: Request):
+        sess = require_session(request)
+        require_csrf(request, sess)
+        n = await asyncio.to_thread(push.send_all, "xrpbot · prueba",
+                                    "Si ves esto, las notificaciones de este dispositivo funcionan.", "info", "/", "test")
+        store.audit(sess.username, client_ip(request), "push_test", f"entregadas={n}", "ok")
+        return {"delivered": n, "subscriptions": push.count()}
 
     # ------------------------------------------------------------ demo
     @app.post("/api/demo/scenario")

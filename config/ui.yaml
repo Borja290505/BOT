@@ -14,3 +14,7 @@ bot_settings_path: config/settings.yaml   # solo se leen parámetros, nunca .env
 state_dir: state
 ui_db_path: ui-state/ui.sqlite   # base de datos PROPIA de la interfaz (usuarios, sesiones, auditoría)
 display_timezone: Europe/Madrid
+# Notificaciones push en el móvil (PWA). El contacto lo ven Apple/Google si hay problemas de envío.
+push_contact: "mailto:xrpbot@example.com"
+push_min_level: warning    # warning | error | critical: eventos del bot que llegan como push
+push_trades: true          # avisar también de entradas y cierres de operaciones
