@@ -49,3 +49,32 @@ def test_research_report_end_to_end(tmp_path):
     assert set(v) == {"candidata", "fase_c", "holdout"}
     assert v["holdout"] is None or v["fase_c"] is True   # el holdout solo se toca si pasa la fase C
     assert len(pd.read_csv(out / "B_cribado.csv")) == 12
+
+
+def test_basket_report_end_to_end(tmp_path):
+    from xrpbot.research.basket import main as basket_main
+    data = tmp_path / "data"
+    n = 24 * 30 * 40                                    # ~40 meses
+    instruments = []
+    for k, sym in enumerate(["PF_XBTUSD", "PF_ETHUSD", "PF_XRPUSD", "PF_SOLUSD"]):
+        drift = np.zeros(n)
+        drift[n // 4: n // 2] = 0.0004 * (1 if k % 2 else -1)
+        c = path_candles(n=n, seed=11 + k, vol=0.006, drift=drift, start_price=[60000, 3000, 0.5, 150][k])
+        c.index = pd.date_range("2022-01-01", periods=n, freq="1h", tz="UTC")
+        save_frame(c, candles_path(data, sym, "trade", "1h"))
+        f = pd.DataFrame({"funding_rate": 0.0, "relative_rate": 0.00001},
+                         index=pd.date_range("2022-01-01", periods=n, freq="1h", tz="UTC", name="time"))
+        save_frame(f, data / f"{sym}_funding.parquet")
+        instruments.append({"symbol": sym, "tradeable": True, "tickSize": 0.0001, "contractSize": 1,
+                            "contractValuePrecision": 4, "marginLevels": [{"initialMargin": 0.02,
+                                                                          "maintenanceMargin": 0.01}]})
+    (data / "instruments.json").write_text(json.dumps(instruments))
+    cfg = tmp_path / "s.yaml"
+    cfg.write_text(f"backtest:\n  data_dir: {data}\n  stop_trigger_source: trade\n")
+    out = tmp_path / "out"
+    assert basket_main(["--config", str(cfg), "--out", str(out)]) == 0
+    v = json.loads((out / "veredicto.json").read_text())
+    assert v["contratos"] == ["PF_XBTUSD", "PF_ETHUSD", "PF_SOLUSD", "PF_XRPUSD"]
+    assert v["holdout"] is None or v["fase_c"] is True
+    text = (out / "informe.md").read_text()
+    assert "PF_ADAUSD: sin datos descargados" in text and "Fase B" in text

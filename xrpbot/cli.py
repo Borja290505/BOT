@@ -146,7 +146,7 @@ async def cmd_check(s: Settings) -> None:
             print("Sin claves para este modo: solo se han comprobado los endpoints públicos")
 
 
-async def cmd_download(s: Settings, since: str | None) -> None:
+async def cmd_download(s: Settings, since: str | None, symbols: list[str] | None = None) -> None:
     from .data.downloader import download_candles, download_funding
     from .exchange.rest import KrakenAPIError, KrakenFuturesRest
 
@@ -158,15 +158,20 @@ async def cmd_download(s: Settings, since: str | None) -> None:
         (data_dir / "instruments.json").write_text(json.dumps(instruments, indent=1))
         (data_dir / "feeschedules.json").write_text(json.dumps(await rest.get_fee_schedules(), indent=1))
         since_ts = pd.Timestamp(since, tz="UTC") if since else None
-        for tick_type in ("trade", "mark"):
-            df = await download_candles(rest, data_dir, s.symbol, tick_type, "1h", since_ts)
-            print(f"{tick_type}: {len(df)} velas ({df.index.min()} -> {df.index.max()})")
-        try:
-            f = await download_funding(rest, data_dir, s.symbol)
-            print(f"funding: {len(f)} registros ({f.index.min()} -> {f.index.max()})")
-        except KrakenAPIError as exc:
-            print(f"AVISO: no se pudo descargar el funding histórico ({exc}). "
-                  "Las velas sí se guardaron; el backtest se hará sin funding.")
+        for symbol in symbols or [s.symbol]:
+            try:
+                for tick_type in ("trade", "mark"):
+                    df = await download_candles(rest, data_dir, symbol, tick_type, "1h", since_ts)
+                    print(f"{symbol} {tick_type}: {len(df)} velas ({df.index.min()} -> {df.index.max()})")
+            except KrakenAPIError as exc:
+                print(f"AVISO: {symbol}: no se pudieron descargar las velas ({exc})")
+                continue
+            try:
+                f = await download_funding(rest, data_dir, symbol)
+                print(f"{symbol} funding: {len(f)} registros ({f.index.min()} -> {f.index.max()})")
+            except KrakenAPIError as exc:
+                print(f"AVISO: {symbol}: no se pudo descargar el funding histórico ({exc}). "
+                      "Las velas sí se guardaron; el backtest se hará sin funding.")
 
 
 def cmd_backtest(s: Settings, funding_filter: str, start: str | None, end: str | None, out: str,
@@ -330,6 +335,7 @@ def main(argv: list[str] | None = None) -> None:
             p.add_argument("--out", default="reports/csv")
     p = sub.add_parser("download")
     p.add_argument("--since", default="2022-01-01")
+    p.add_argument("--symbols", nargs="+", help="varios contratos (por defecto el de la config)")
     for name in ("backtest", "walkforward"):
         p = sub.add_parser(name)
         p.add_argument("--funding-filter", choices=["on", "off", "both"], default="both")
@@ -359,7 +365,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.cmd == "check":
         asyncio.run(cmd_check(s))
     elif args.cmd == "download":
-        asyncio.run(cmd_download(s, args.since))
+        asyncio.run(cmd_download(s, args.since, args.symbols))
     elif args.cmd == "backtest":
         cmd_backtest(s, args.funding_filter, args.start, args.end, args.out, args.costs)
     elif args.cmd == "walkforward":

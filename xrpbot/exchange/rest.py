@@ -197,7 +197,24 @@ class KrakenFuturesRest:
         return (await self._request("GET", "feeschedules")).get("feeSchedules", [])
 
     async def get_historical_funding(self, symbol: str) -> list[dict]:
-        return (await self._request("GET", "historicalfundingrates", {"symbol": symbol})).get("rates", [])
+        """Funding histórico (público). Kraken lo publica en la API v4; si la v3 falla, se usa la v4."""
+        try:
+            return (await self._request("GET", "historicalfundingrates", {"symbol": symbol})).get("rates", [])
+        except KrakenAPIError as first:
+            if "/v3" not in self.base_url or self._session is None:
+                raise
+            url = self.base_url.replace("/v3", "/v4") + "/historicalfundingrates?" + urlencode({"symbol": symbol})
+            async with self._session.get(url, headers={"Accept": "application/json"}) as resp:
+                text, status = await resp.text(), resp.status
+            try:
+                payload = json.loads(text)
+            except ValueError:
+                raise KrakenAPIError("historicalfundingrates", f"v3: {first.error}; v4: HTTP {status} "
+                                                               f"{text[:200]!r}") from None
+            rates = payload.get("rates") if isinstance(payload, dict) else None
+            if rates is None:
+                raise KrakenAPIError("historicalfundingrates", f"v3: {first.error}; v4: {text[:200]!r}") from first
+            return rates
 
     async def get_candles(self, tick_type: str, symbol: str, resolution: str,
                           start_s: int | None = None, end_s: int | None = None) -> dict:
